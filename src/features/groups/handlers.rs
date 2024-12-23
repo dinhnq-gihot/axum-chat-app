@@ -68,7 +68,7 @@ pub async fn create_group(
 
     (
         StatusCode::CREATED,
-        Json(json!({"message": "created group successfully"})),
+        Json(json!({"result": "created group successfully"})),
     )
 }
 
@@ -97,5 +97,5 @@ pub async fn get_group_by_id(
         users: users.into_iter().map(|u| u.into()).collect::<Vec<_>>(),
     };
 
-    (StatusCode::OK, Json(result))
+    (StatusCode::OK, Json(json!({"result": result})))
 }
