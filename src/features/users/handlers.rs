@@ -53,7 +53,7 @@ pub async fn create_user(
 
     (
         StatusCode::OK,
-        Json(json!({"message": "create user successfully"})),
+        Json(json!({"result": "create user successfully"})),
     )
 }
 
@@ -69,7 +69,10 @@ pub async fn get_user_by_id(
         .await
         .unwrap();
 
-    (StatusCode::OK, Json(UserResponse::from(user)))
+    (
+        StatusCode::OK,
+        Json(json!({"result": UserResponse::from(user)})),
+    )
 }
 
 pub async fn get_all_user(Extension(db): Extension<Arc<Database>>) -> impl IntoResponse {
@@ -124,7 +127,7 @@ pub async fn update_user(
         StatusCode::ACCEPTED,
         Json(json!(
             {
-                "message": "User updated successfully"
+                "result": "User updated successfully"
             }
         )),
     )
@@ -144,7 +147,7 @@ pub async fn delete_user(
         StatusCode::ACCEPTED,
         Json(json!(
             {
-                "message": "User deleted successfully"
+                "result": "User deleted successfully"
             }
         )),
     )
