@@ -1,0 +1,40 @@
+[package]
+name = "axum-chat-app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# websocket
+socketioxide = { version = "0.15.1", features = ["state"] }
+
+# async
+tokio = { version = "1.42.0", features = ["full"] }
+
+# logging
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+
+# serialize
+serde = { version = "1.0.216", features = ["derive"] }
+serde_json = { version = "1.0.133" }
+
+# web-services
+axum = "0.7.9"
+jsonwebtoken = "9.3.0"
+tower = "0.5.2"
+tower-http = { version = "0.6.2", features = ["cors"] }
+
+# utils
+chrono = { version = "0.4.39", features = ["serde"] }
+uuid = { version = "1.11.0", features = ["v4", "serde"] }
+dotenv = "0.15.0"
+thiserror = "1.0.58"
+once_cell = "1.19.0"
+futures = "0.3.30"
+
+# db
+diesel = { version = "2.2.6", features = [
+    "extras",
+] } # no backend features need to be enabled
+diesel-async = { version = "0.5.2", features = ["postgres", "bb8"] }
+diesel_async_migrations = "0.15.0"

@@ -1,0 +1,4 @@
+/target
+docker/lib/*
+
+!docker/lib/.keep

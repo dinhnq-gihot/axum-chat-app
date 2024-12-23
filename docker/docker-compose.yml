@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  db:
+    container_name: chatapp-db
+    image: postgres:latest
+    restart: on-failure
+    environment:
+      POSTGRES_USER: chatapp
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: chatapp
+    volumes:
+      - ./lib/chatapp.db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  pgadmin4:
+    image: dpage/pgadmin4
+    depends_on:
+      - "db"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@gmail.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - 5050:80
