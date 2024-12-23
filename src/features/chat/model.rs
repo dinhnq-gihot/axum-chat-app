@@ -119,11 +119,10 @@ impl Default for Message {
 #[diesel(table_name = crate::schema::messages)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NewMessage<'a> {
-    pub id: &'a Uuid,
     pub user_id: &'a Uuid,
     pub group_id: &'a Uuid,
     pub content: Option<&'a str>,
     pub name_file: Option<&'a str>,
     #[diesel(column_name = "type_")]
-    pub r#type: Option<&'a MessageType>,
+    pub r#type: &'a MessageType,
 }
