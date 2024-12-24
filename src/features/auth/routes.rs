@@ -1,8 +1,5 @@
 use {
-    super::handlers::{
-        login,
-        verify,
-    },
+    super::handlers::login,
     axum::{
         routing::post,
         Router,
@@ -10,7 +7,5 @@ use {
 };
 
 pub fn get_routes() -> Router {
-    Router::new()
-        .route("/login", post(login))
-        .route("/verify", post(verify))
+    Router::new().route("/login", post(login))
 }

@@ -1,65 +1,56 @@
 use {
-    super::{
-        dto::{
-            LoginRequest,
-            LoginResponse,
+    super::dto::LoginRequest,
+    crate::{
+        database::Database,
+        enums::{
+            errors::*,
+            types::{
+                DataResponse,
+                GenericResponse,
+            },
         },
-        model::Claims,
+        features::users::model::User,
+        schema::users,
+        utils::jwt,
     },
     axum::{
-        http::{
-            header::AUTHORIZATION,
-            HeaderMap,
-            StatusCode,
-        },
+        http::StatusCode,
+        response::IntoResponse,
+        Extension,
         Json,
     },
-    jsonwebtoken::{
-        decode,
-        encode,
-        DecodingKey,
-        EncodingKey,
-        Header,
-        Validation,
+    diesel::{
+        query_dsl::methods::FilterDsl,
+        ExpressionMethods,
     },
+    diesel_async::RunQueryDsl,
+    std::sync::Arc,
 };
 
-pub async fn login(Json(payload): Json<LoginRequest>) -> (StatusCode, Json<LoginResponse>) {
-    let LoginRequest { email, password: _ } = payload;
+pub async fn login(
+    Extension(db): Extension<Arc<Database>>,
+    Json(payload): Json<LoginRequest>,
+) -> Result<impl IntoResponse> {
+    let LoginRequest { email, password } = payload;
 
-    let claims = Claims {
-        sub: email,
-        exp: (chrono::Utc::now() + chrono::Duration::days(1)).timestamp() as usize,
-    };
+    let mut conn = db.get_connection().await;
+    let user = users::table
+        .filter(users::email.eq(email))
+        .filter(users::password.eq(password))
+        .first::<User>(&mut conn)
+        .await
+        .map_err(|_| Error::RecordNotFound)?;
 
-    let secret = "my_secret";
+    let token = jwt::encode_jwt(user.id, user.email)?;
 
-    let token = encode(
-        &Header::default(),
-        &claims,
-        &EncodingKey::from_secret(secret.as_ref()),
-    )
-    .unwrap();
-
-    let response = LoginResponse {
-        msg: String::from("Login Success"),
-        token,
-    };
-
-    (StatusCode::OK, Json(response))
-}
-
-pub async fn verify(header_map: HeaderMap) -> Result<Json<String>, StatusCode> {
-    if let Some(token) = header_map.get(AUTHORIZATION) {
-        let token = token.to_str().unwrap().replace("Bearer ", "");
-        match decode::<Claims>(
-            &token,
-            &DecodingKey::from_secret("my_secret".as_ref()),
-            &Validation::default(),
-        ) {
-            Ok(token_data) => return Ok(Json(token_data.claims.sub)),
-            Err(_) => return Err(StatusCode::UNAUTHORIZED),
-        }
-    }
-    Err(StatusCode::UNAUTHORIZED)
+    Ok((
+        StatusCode::CREATED,
+        Json(GenericResponse {
+            status: StatusCode::CREATED.to_string(),
+            result: DataResponse {
+                msg: "Login Success".into(),
+                data: Some(token),
+            },
+        }),
+    ))
 }
