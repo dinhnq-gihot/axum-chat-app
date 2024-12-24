@@ -1,4 +1,8 @@
 use {
+    super::types::{
+        DataResponse,
+        GenericResponse,
+    },
     axum::{
         http::StatusCode,
         response::{
@@ -8,11 +12,6 @@ use {
         Json,
     },
     diesel_async::pooled_connection::bb8::RunError,
-    serde::Serialize,
-    serde_json::{
-        json,
-        Value,
-    },
     thiserror::Error,
 };
 
@@ -55,7 +54,9 @@ pub enum Error {
 
     // JWT errors
     #[error("JWT decode failed: {0}")]
-    DecodeJwtFailed(String),
+    DecodeJwtFailed(#[source] jsonwebtoken::errors::Error),
+    #[error("JWT encode failed: {0}")]
+    EncodeJwtFailed(#[source] jsonwebtoken::errors::Error),
 
     // Auth errors
     #[error("Please login first")]
@@ -68,22 +69,36 @@ pub enum Error {
 
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
-        #[derive(Serialize)]
-        struct ErrorResp {
-            status: String,
-            result: Value,
-        }
+        match self {
+            // Handle authorization error
+            Error::TokenNotFound => {
+                (
+                    StatusCode::UNAUTHORIZED,
+                    Json(GenericResponse {
+                        status: StatusCode::UNAUTHORIZED.to_string(),
+                        result: DataResponse::<String> {
+                            msg: self.to_string(),
+                            data: None,
+                        },
+                    }),
+                )
+                    .into_response()
+            }
 
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResp {
-                status: StatusCode::INTERNAL_SERVER_ERROR.to_string(),
-                result: json!({
-                    "msg": self.to_string(),
-                    "data": ""
-                }),
-            }),
-        )
-            .into_response()
+            // Handle other errors as internal server errors
+            _ => {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(GenericResponse {
+                        status: StatusCode::INTERNAL_SERVER_ERROR.to_string(),
+                        result: DataResponse::<String> {
+                            msg: self.to_string(),
+                            data: None,
+                        },
+                    }),
+                )
+                    .into_response()
+            }
+        }
     }
 }
