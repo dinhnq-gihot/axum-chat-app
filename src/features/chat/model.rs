@@ -93,7 +93,6 @@ pub struct Message {
     pub user_id: Uuid,
     pub group_id: Uuid,
     pub content: Option<String>,
-    pub name_file: Option<String>,
     #[diesel(column_name = "type_")]
     pub r#type: Option<MessageType>,
     pub created_at: DateTime<Utc>,
@@ -107,7 +106,6 @@ impl Default for Message {
             user_id: Default::default(),
             group_id: Default::default(),
             content: Default::default(),
-            name_file: Default::default(),
             r#type: Default::default(),
             created_at: Default::default(),
             edited_at: Default::default(),
@@ -122,7 +120,6 @@ pub struct NewMessage<'a> {
     pub user_id: &'a Uuid,
     pub group_id: &'a Uuid,
     pub content: Option<&'a str>,
-    pub name_file: Option<&'a str>,
     #[diesel(column_name = "type_")]
     pub r#type: &'a MessageType,
 }
