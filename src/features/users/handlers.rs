@@ -25,7 +25,10 @@ use {
         schema::users,
     },
     axum::{
-        extract::Path,
+        extract::{
+            Multipart,
+            Path,
+        },
         http::StatusCode,
         response::IntoResponse,
         Extension,
@@ -38,7 +41,12 @@ use {
         update,
     },
     diesel_async::RunQueryDsl,
+    regex::Regex,
     std::sync::Arc,
+    tokio::{
+        fs::File,
+        io::AsyncWriteExt,
+    },
     uuid::Uuid,
 };
 
@@ -200,4 +208,75 @@ pub async fn delete_user(
             },
         }),
     ))
+}
+
+pub async fn update_avatar(
+    Extension(db): Extension<Arc<Database>>,
+    Path(id): Path<Uuid>,
+    mut multipart: Multipart,
+) -> Result<impl IntoResponse> {
+    let mut updated = false;
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| Error::Anyhow(e.into()))?
+    {
+        if let Some("avatar") = field.name() {
+            let parts: Vec<_> = field.file_name().unwrap_or_default().split(".").collect();
+            let (filename, extension) = match parts.as_slice() {
+                [filename, extension, ..] => (filename, extension),
+                _ => return Err(Error::FileTypeInvalid),
+            };
+            let content_type = field.content_type().unwrap_or_default();
+
+            let regex =
+                Regex::new(mime::IMAGE_STAR.as_ref()).map_err(|e| Error::Anyhow(e.into()))?;
+
+            if regex.is_match(&content_type) {
+                let mut conn = db.get_connection().await;
+                let mut existed_user: User = users::table
+                    .find(id)
+                    .select(User::as_select())
+                    .first(&mut conn)
+                    .await
+                    .map_err(|_| Error::RecordNotFound)?;
+
+                let new_filename = format!("{filename}-{}.{extension}", Uuid::new_v4().to_string());
+                existed_user.avatar = Some(new_filename.to_string());
+
+                let mut file = File::create(format!("public/uploads/{new_filename}"))
+                    .await
+                    .map_err(|_| Error::CreateFileFailed)?;
+                let data = field.bytes().await.map_err(|e| Error::Anyhow(e.into()))?;
+                file.write(&data)
+                    .await
+                    .map_err(|e| Error::Anyhow(e.into()))?;
+
+                update(users::table)
+                    .set(existed_user)
+                    .execute(&mut conn)
+                    .await
+                    .map_err(|e| Error::UpdateFailed(e))?;
+
+                updated = true;
+            } else {
+                return Err(Error::FileTypeInvalid);
+            }
+        }
+    }
+
+    if updated {
+        return Ok((
+            StatusCode::ACCEPTED,
+            Json(GenericResponse {
+                status: StatusCode::ACCEPTED.to_string(),
+                result: DataResponse::<String> {
+                    msg: "success".into(),
+                    data: None,
+                },
+            }),
+        ));
+    } else {
+        return Err(Error::FieldNotFound("avatar".into()));
+    }
 }
