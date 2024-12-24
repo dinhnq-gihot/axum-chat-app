@@ -25,7 +25,6 @@ diesel::table! {
         content -> Nullable<Text>,
         #[sql_name = "type"]
         type_ -> Nullable<MessageTypes>,
-        name_file -> Nullable<Varchar>,
         created_at -> Timestamptz,
         edited_at -> Timestamptz,
     }

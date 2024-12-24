@@ -15,6 +15,7 @@ use {
     uuid::Uuid,
 };
 
+#[warn(unused_variables)]
 pub fn encode_jwt(user_id: Uuid, user_email: String) -> Result<String> {
     let claims = Claims {
         sub: user_email,

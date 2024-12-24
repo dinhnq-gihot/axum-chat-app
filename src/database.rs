@@ -1,4 +1,8 @@
 use {
+    crate::enums::errors::{
+        Error,
+        Result,
+    },
     diesel_async::{
         pooled_connection::{
             bb8::{
@@ -29,9 +33,10 @@ pub struct Database {
 
 impl Default for Database {
     fn default() -> Self {
-        block_on(Database::new(
+        block_on(Database::try_new(
             "postgresql://chatapp:123@localhost:15432/chatapp".into(),
         ))
+        .unwrap()
     }
 }
 
@@ -45,21 +50,28 @@ impl Debug for Database {
 }
 
 impl Database {
-    pub async fn new(url: String) -> Self {
+    pub async fn try_new(url: String) -> Result<Self> {
         let manager = AsyncDieselConnectionManager::<AsyncPgConnection>::new(url.clone());
         let pool = Pool::builder()
             .test_on_check_out(true)
             .build(manager)
             .await
-            .expect("Could not build connection pool");
-        let mut _conn = pool.get_owned().await.unwrap();
-        MIGRATIONS.run_pending_migrations(&mut _conn).await.unwrap();
+            .map_err(|_| Error::DatabaseConnectionFailed)?;
 
-        Database {
+        let mut _conn = pool
+            .get_owned()
+            .await
+            .map_err(|e| Error::PoolConnectionFailed(e))?;
+        MIGRATIONS
+            .run_pending_migrations(&mut _conn)
+            .await
+            .map_err(|_| Error::DatabaseMigrationFailed)?;
+
+        Ok(Database {
             pool,
             _url: url,
             _in_use: true,
-        }
+        })
     }
 
     pub async fn get_connection(&self) -> PooledConnection<AsyncPgConnection> {

@@ -52,6 +52,9 @@ pub enum Error {
     #[error("File type invalid")]
     FileTypeInvalid,
 
+    #[error("Field not found: {0}")]
+    FieldNotFound(String),
+
     // JWT errors
     #[error("JWT decode failed: {0}")]
     DecodeJwtFailed(#[source] jsonwebtoken::errors::Error),

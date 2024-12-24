@@ -19,18 +19,21 @@ serde = { version = "1.0.216", features = ["derive"] }
 serde_json = { version = "1.0.133" }
 
 # web-services
-axum = "0.7.9"
+axum = { version = "0.7.9", features = ["multipart"] }
 jsonwebtoken = "9.3.0"
 tower = "0.5.2"
-tower-http = { version = "0.6.2", features = ["cors"] }
+tower-http = { version = "0.6.2", features = ["full"] }
 
 # utils
 chrono = { version = "0.4.39", features = ["serde"] }
 uuid = { version = "1.11.0", features = ["v4", "serde"] }
 dotenv = "0.15.0"
-thiserror = "1.0.58"
+thiserror = "2.0.9"
 once_cell = "1.19.0"
 futures = "0.3.30"
+anyhow = "1.0.95"
+mime = "0.3.17"
+regex = "1.11.1"
 
 # db
 diesel = { version = "2.2.6", features = [

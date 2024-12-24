@@ -3,74 +3,81 @@ pub mod enums;
 pub mod features;
 mod router;
 pub mod schema;
+pub mod socket;
+pub mod utils;
 
 use {
     axum::{
-        http::StatusCode,
-        routing::{
-            get,
-            post,
-        },
-        Json,
-        Router,
+        http::HeaderValue,
+        Extension,
     },
     database::Database,
-    serde::{
-        Deserialize,
-        Serialize,
+    dotenv::dotenv,
+    enums::errors::{
+        Error,
+        Result,
+    },
+    router::create_router,
+    socket::{
+        check_login,
+        on_connect,
+    },
+    socketioxide::{
+        handler::ConnectHandler,
+        SocketIo,
+    },
+    std::{
+        env,
+        sync::Arc,
     },
     tokio::net::TcpListener,
+    tower::ServiceBuilder,
+    tower_http::{
+        cors::CorsLayer,
+        services::ServeDir,
+        trace::TraceLayer,
+    },
     tracing::info,
     tracing_subscriber::FmtSubscriber,
 };
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing::subscriber::set_global_default(FmtSubscriber::default())?;
+async fn main() -> Result<()> {
+    tracing::subscriber::set_global_default(FmtSubscriber::default())
+        .map_err(|e| Error::Anyhow(e.into()))?;
 
-    let app = Router::new()
-        .route("/", get(root))
-        .route("/users", post(create_user));
+    // load environment variables from a .env file
+    dotenv().ok();
 
-    info!("Starting server");
+    let (layer, io) = SocketIo::new_layer();
+    io.ns("/", on_connect.with(check_login));
 
-    let db = Database::new("postgresql://chatapp:123@localhost:15432/chatapp".into()).await;
+    let db_url =
+        env::var("DATABASE_URL").map_err(|_| Error::EnvVarNotFound("DATABASE_URL".to_string()))?;
+    let db = Arc::new(Database::try_new(db_url).await?);
 
-    let listener = TcpListener::bind("0.0.0.0:3000").await?;
-    axum::serve(listener, app).await?;
+    let host = env::var("HOST").map_err(|_| Error::EnvVarNotFound("HOST".to_string()))?;
+    let port = env::var("PORT").map_err(|_| Error::EnvVarNotFound("PORT".to_string()))?;
+    let url = format!("{host}:{port}");
+
+    let listener = TcpListener::bind(&url)
+        .await
+        .map_err(|e| Error::Anyhow(e.into()))?;
+
+    let app = create_router()
+        .fallback_service(ServeDir::new("public"))
+        .layer(
+            ServiceBuilder::new()
+                .layer(TraceLayer::new_for_http())
+                .layer(CorsLayer::new().allow_origin("*".parse::<HeaderValue>().unwrap()))
+                .layer(Extension(db))
+                .layer(layer),
+        );
+
+    info!("Starting server at: {url}");
+    axum::serve(listener, app)
+        .await
+        .map_err(|_| Error::ServerServedFailed)?;
 
     Ok(())
-}
-
-async fn root() -> &'static str {
-    "Hello World"
-}
-
-async fn create_user(
-    // this argument tells axum to parse the request body
-    // as JSON into a `CreateUser` type
-    Json(payload): Json<CreateUser>,
-) -> (StatusCode, Json<User>) {
-    // insert your application logic here
-    let user = User {
-        id: 1337,
-        username: payload.username,
-    };
-
-    // this will be converted into a JSON response
-    // with a status code of `201 Created`
-    (StatusCode::CREATED, Json(user))
-}
-
-// the input to our `create_user` handler
-#[derive(Deserialize)]
-struct CreateUser {
-    username: String,
-}
-
-// the output to our `create_user` handler
-#[derive(Serialize)]
-struct User {
-    id: u64,
-    username: String,
 }
