@@ -12,6 +12,13 @@ use {
     },
     crate::{
         database::Database,
+        enums::{
+            errors::*,
+            types::{
+                DataResponse,
+                GenericResponse,
+            },
+        },
         schema::messages,
     },
     axum::{
@@ -28,14 +35,14 @@ use {
         SelectableHelper,
     },
     diesel_async::RunQueryDsl,
-    serde_json::json,
+    std::sync::Arc,
     uuid::Uuid,
 };
 
 pub async fn chat(
-    Extension(db): Extension<Database>,
+    Extension(db): Extension<Arc<Database>>,
     Json(payload): Json<Chat>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse> {
     let Chat {
         user_id,
         group_id,
@@ -58,18 +65,24 @@ pub async fn chat(
         .values(new_message)
         .execute(&mut conn)
         .await
-        .unwrap();
+        .map_err(|e| Error::InsertFailed(e))?;
 
-    (
+    Ok((
         StatusCode::CREATED,
-        Json(json!({"result": "created message successfully"})),
-    )
+        Json(GenericResponse {
+            status: StatusCode::CREATED.to_string(),
+            result: DataResponse::<String> {
+                msg: "success".into(),
+                data: None,
+            },
+        }),
+    ))
 }
 
 pub async fn get_group_messages(
-    Extension(db): Extension<Database>,
+    Extension(db): Extension<Arc<Database>>,
     Path(group_id): Path<Uuid>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse> {
     let mut conn = db.get_connection().await;
 
     let messages = messages::table
@@ -77,12 +90,21 @@ pub async fn get_group_messages(
         .select(Message::as_select())
         .load::<Message>(&mut conn)
         .await
-        .unwrap();
+        .map_err(|e| Error::QueryFailed(e))?;
 
     let result = messages
         .into_iter()
         .map(|m| m.into())
         .collect::<Vec<MessageResponse>>();
 
-    (StatusCode::OK, Json(json!({ "result": result })))
+    Ok((
+        StatusCode::OK,
+        Json(GenericResponse {
+            status: StatusCode::OK.to_string(),
+            result: DataResponse {
+                msg: "success".into(),
+                data: Some(result),
+            },
+        }),
+    ))
 }

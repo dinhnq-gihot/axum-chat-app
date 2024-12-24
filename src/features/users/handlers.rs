@@ -12,6 +12,16 @@ use {
     },
     crate::{
         database::Database,
+        enums::{
+            errors::{
+                Error,
+                Result,
+            },
+            types::{
+                DataResponse,
+                GenericResponse,
+            },
+        },
         schema::users,
     },
     axum::{
@@ -28,7 +38,6 @@ use {
         update,
     },
     diesel_async::RunQueryDsl,
-    serde_json::json,
     std::sync::Arc,
     uuid::Uuid,
 };
@@ -36,62 +45,98 @@ use {
 pub async fn create_user(
     Extension(db): Extension<Arc<Database>>,
     Json(payload): Json<CreateUserRequest>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse> {
     let mut conn = db.get_connection().await;
 
-    let _ = insert_into(users::table)
+    insert_into(users::table)
         .values(NewUser {
             name: &payload.username,
             email: &payload.email,
             password: &payload.password,
             avatar: payload.avatar.as_deref(),
         })
-        .returning(User::as_returning())
-        .get_result(&mut conn)
+        .execute(&mut conn)
         .await
-        .unwrap();
+        .map_err(|e| Error::InsertFailed(e))?;
 
-    (
+    Ok((
         StatusCode::OK,
-        Json(json!({"result": "create user successfully"})),
-    )
+        Json(GenericResponse {
+            status: StatusCode::CREATED.to_string(),
+            result: DataResponse::<String> {
+                msg: "created user successfully".into(),
+                data: None,
+            },
+        }),
+    ))
 }
 
 pub async fn get_user_by_id(
     Extension(db): Extension<Arc<Database>>,
     Path(id): Path<Uuid>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse> {
     let mut conn = db.get_connection().await;
-    let user = users::table
+    let user = match users::table
         .find(id)
         .select(User::as_select())
-        .first(&mut conn)
+        .first::<User>(&mut conn)
         .await
-        .unwrap();
+    {
+        Ok(user) => Some(user),
+        Err(e) => {
+            match e {
+                diesel::NotFound => None,
+                e => return Err(Error::QueryFailed(e)),
+            }
+        }
+    };
 
-    (
+    let result = if let Some(u) = user {
+        Some(UserResponse::from(u))
+    } else {
+        None
+    };
+
+    Ok((
         StatusCode::OK,
-        Json(json!({"result": UserResponse::from(user)})),
-    )
+        Json(GenericResponse {
+            status: StatusCode::OK.to_string(),
+            result: DataResponse {
+                msg: "success".into(),
+                data: result,
+            },
+        }),
+    ))
 }
 
-pub async fn get_all_user(Extension(db): Extension<Arc<Database>>) -> impl IntoResponse {
+pub async fn get_all_user(Extension(db): Extension<Arc<Database>>) -> Result<impl IntoResponse> {
     let mut conn = db.get_connection().await;
-    let users: Vec<User> = users::table
+    let users = users::table
         .select(User::as_select())
-        .load(&mut conn)
+        .load::<User>(&mut conn)
         .await
-        .unwrap();
-    let user_responses: Vec<UserResponse> = users.into_iter().map(UserResponse::from).collect();
+        .map_err(|e| Error::QueryFailed(e))?
+        .into_iter()
+        .map(UserResponse::from)
+        .collect::<Vec<_>>();
 
-    (StatusCode::OK, Json(user_responses))
+    Ok((
+        StatusCode::OK,
+        Json(GenericResponse {
+            status: StatusCode::OK.to_string(),
+            result: DataResponse {
+                msg: "success".into(),
+                data: Some(users),
+            },
+        }),
+    ))
 }
 
 pub async fn update_user(
     Extension(db): Extension<Arc<Database>>,
     Path(id): Path<Uuid>,
     Json(payload): Json<UpdateUserRequest>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse> {
     let UpdateUserRequest {
         name,
         email,
@@ -104,7 +149,7 @@ pub async fn update_user(
         .select(User::as_select())
         .first(&mut conn)
         .await
-        .unwrap();
+        .map_err(|_| Error::RecordNotFound)?;
 
     if name.is_some() {
         existed_user.name = name.unwrap();
@@ -121,34 +166,38 @@ pub async fn update_user(
         .returning(User::as_returning())
         .get_result(&mut conn)
         .await
-        .unwrap();
+        .map_err(|e| Error::UpdateFailed(e))?;
 
-    (
+    Ok((
         StatusCode::ACCEPTED,
-        Json(json!(
-            {
-                "result": "User updated successfully"
-            }
-        )),
-    )
+        Json(GenericResponse {
+            status: StatusCode::ACCEPTED.to_string(),
+            result: DataResponse::<String> {
+                msg: "success".into(),
+                data: None,
+            },
+        }),
+    ))
 }
 
 pub async fn delete_user(
     Extension(db): Extension<Arc<Database>>,
     Path(id): Path<Uuid>,
-) -> impl IntoResponse {
+) -> Result<impl IntoResponse> {
     let mut conn = db.get_connection().await;
     delete(users::table.filter(users::id.eq(id)))
         .execute(&mut conn)
         .await
-        .unwrap();
+        .map_err(|e| Error::DeleteFailed(e))?;
 
-    (
-        StatusCode::ACCEPTED,
-        Json(json!(
-            {
-                "result": "User deleted successfully"
-            }
-        )),
-    )
+    Ok((
+        StatusCode::NO_CONTENT,
+        Json(GenericResponse {
+            status: StatusCode::NO_CONTENT.to_string(),
+            result: DataResponse::<String> {
+                msg: "success".into(),
+                data: None,
+            },
+        }),
+    ))
 }
