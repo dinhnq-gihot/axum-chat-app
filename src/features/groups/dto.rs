@@ -9,8 +9,9 @@ use {
 
 #[derive(Debug, Deserialize)]
 pub struct CreateGroup {
-    pub name: String,
-    pub user_ids: Vec<Uuid>,
+    pub group_name: String,
+    pub user_emails: Option<Vec<String>>,
+    pub user_names: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize)]

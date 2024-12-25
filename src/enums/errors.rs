@@ -64,6 +64,12 @@ pub enum Error {
     // Auth errors
     #[error("Please login first")]
     TokenNotFound,
+    #[error("Hash password failed")]
+    HashingFailed,
+    #[error("VerifyPasswordFailed")]
+    VerifyPasswordFailed,
+    #[error("Invalid credentials")]
+    InvalidCredentials,
 
     // anyhow error
     #[error(transparent)]
@@ -74,7 +80,7 @@ impl IntoResponse for Error {
     fn into_response(self) -> Response {
         match self {
             // Handle authorization error
-            Error::TokenNotFound => {
+            Error::TokenNotFound | Error::InvalidCredentials => {
                 (
                     StatusCode::UNAUTHORIZED,
                     Json(GenericResponse {
@@ -87,7 +93,6 @@ impl IntoResponse for Error {
                 )
                     .into_response()
             }
-
             // Handle other errors as internal server errors
             _ => {
                 (

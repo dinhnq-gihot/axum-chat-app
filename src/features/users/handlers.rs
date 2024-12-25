@@ -5,7 +5,7 @@ use {
             UpdateUserRequest,
             UserResponse,
         },
-        model::{
+        models::{
             NewUser,
             User,
         },
@@ -47,6 +47,7 @@ use {
         fs::File,
         io::AsyncWriteExt,
     },
+    tracing::debug,
     uuid::Uuid,
 };
 
@@ -229,6 +230,7 @@ pub async fn update_avatar(
             };
             let content_type = field.content_type().unwrap_or_default();
 
+            debug!("filename:{filename} - extension:{extension} - content_type:{content_type}");
             let regex =
                 Regex::new(mime::IMAGE_STAR.as_ref()).map_err(|e| Error::Anyhow(e.into()))?;
 

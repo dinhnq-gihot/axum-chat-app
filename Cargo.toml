@@ -34,6 +34,7 @@ futures = "0.3.30"
 anyhow = "1.0.95"
 mime = "0.3.17"
 regex = "1.11.1"
+bcrypt = "0.16.0"
 
 # db
 diesel = { version = "2.2.6", features = [
@@ -41,3 +42,13 @@ diesel = { version = "2.2.6", features = [
 ] } # no backend features need to be enabled
 diesel-async = { version = "0.5.2", features = ["postgres", "bb8"] }
 diesel_async_migrations = "0.15.0"
+
+# macro
+quote = "1.0.37" # For generating Rust code
+syn = { version = "2.0.91", features = [
+    "full",
+    "fold",
+] } # For parsing Rust code
+# proc-macro2 = "1.0.92" # Required by `quote` and `syn`
+[lib]
+proc-macro = true

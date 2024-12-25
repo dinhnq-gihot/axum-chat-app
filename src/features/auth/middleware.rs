@@ -3,7 +3,7 @@ use {
     crate::{
         database::Database,
         enums::errors::*,
-        features::users::model::User,
+        features::users::models::User,
         schema::users,
         utils::jwt::decode_jwt,
     },
@@ -57,7 +57,7 @@ pub async fn check_jwt(
 
     drop(conn);
 
-    request.extensions_mut().insert(user.id);
+    request.extensions_mut().insert(user);
 
     let res = next.run(request).await;
 

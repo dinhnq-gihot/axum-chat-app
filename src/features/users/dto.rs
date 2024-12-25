@@ -1,5 +1,5 @@
 use {
-    super::model::User as UserModel,
+    super::models::User as UserModel,
     serde::{
         Deserialize,
         Serialize,

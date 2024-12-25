@@ -1,5 +1,5 @@
 use {
-    crate::features::users::model::User,
+    crate::features::users::models::User,
     diesel::prelude::*,
     uuid::Uuid,
 };

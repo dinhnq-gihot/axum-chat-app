@@ -3,6 +3,11 @@ use {
         enums::errors::*,
         features::auth::model::Claims,
     },
+    chrono::{
+        DateTime,
+        Duration,
+        Utc,
+    },
     jsonwebtoken::{
         decode,
         encode,
@@ -19,7 +24,7 @@ use {
 pub fn encode_jwt(user_id: Uuid, user_email: String) -> Result<String> {
     let claims = Claims {
         sub: user_email,
-        exp: todo!(),
+        exp: (Utc::now() + Duration::days(1)).timestamp() as usize,
         user_id,
     };
 

@@ -2,7 +2,7 @@ use {
     crate::{
         features::{
             groups::models::Group,
-            users::model::User,
+            users::models::User,
         },
         schema::sql_types::MessageTypes,
     },

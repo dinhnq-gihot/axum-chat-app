@@ -10,7 +10,8 @@ use {
             NewUserGroup,
             UserGroup,
         },
-    }, crate::{
+    },
+    crate::{
         database::Database,
         enums::{
             errors::{
@@ -22,38 +23,73 @@ use {
                 GenericResponse,
             },
         },
-        features::users::model::User,
+        features::users::models::User,
         schema::{
             groups,
             users,
             users_groups,
         },
-    }, axum::{
+    },
+    anyhow::anyhow,
+    axum::{
         extract::Path,
         http::StatusCode,
         response::IntoResponse,
         Extension,
         Json,
-    }, diesel::{
+    },
+    diesel::{
         insert_into,
         prelude::*,
-    }, diesel_async::RunQueryDsl, std::sync::Arc, uuid::Uuid
+    },
+    diesel_async::RunQueryDsl,
+    std::sync::Arc,
+    uuid::Uuid,
 };
 
 pub async fn create_group(
     Extension(db): Extension<Arc<Database>>,
+    Extension(sender): Extension<User>,
     Json(payload): Json<CreateGroup>,
 ) -> Result<impl IntoResponse> {
-    let CreateGroup { name, user_ids } = payload;
+    let CreateGroup {
+        group_name,
+        user_emails,
+        user_names,
+    } = payload;
 
     let mut conn = db.get_connection().await;
+
+    let mut user_ids: Vec<Uuid> = if let Some(user_emails) = user_emails {
+        users::table
+            .filter(users::email.eq_any(user_emails))
+            .select(users::id)
+            .load(&mut conn)
+            .await
+            .map_err(|e| Error::QueryFailed(e))?
+    } else if let Some(user_names) = user_names {
+        users::table
+            .filter(users::name.eq_any(user_names))
+            .select(users::id)
+            .load(&mut conn)
+            .await
+            .map_err(|e| Error::QueryFailed(e))?
+    } else {
+        vec![]
+    };
+
+    if user_ids.is_empty() {
+        return Err(Error::Anyhow(anyhow!("Not found input")));
+    }
+
     let new_group: Group = insert_into(groups::table)
-        .values(NewGroup { name: &name })
+        .values(NewGroup { name: &group_name })
         .returning(Group::as_returning())
         .get_result(&mut conn)
         .await
         .map_err(|e| Error::InsertFailed(e))?;
 
+    user_ids.push(sender.id);
     let records = user_ids
         .iter()
         .map(|user_id| {

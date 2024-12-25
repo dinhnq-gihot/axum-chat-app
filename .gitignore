@@ -1,4 +1,6 @@
 /target
 docker/lib/*
+public/uploads/*
 
 !docker/lib/.keep
+!public/uploads/.keep
