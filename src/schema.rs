@@ -41,6 +41,8 @@ diesel::table! {
         password -> Varchar,
         #[max_length = 255]
         avatar -> Nullable<Varchar>,
+        #[max_length = 255]
+        role -> Varchar,
         is_online -> Nullable<Bool>,
     }
 }

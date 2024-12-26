@@ -7,12 +7,13 @@ CREATE TABLE users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     avatar VARCHAR(255),
+    role VARCHAR(255) NOT NULL DEFAULT 'user',
     is_online BOOLEAN DEFAULT FALSE
 );
 
 CREATE INDEX idx_user_email ON users (email);
 
-INSERT INTO users (name, email, password) VALUES
-('dinh1', 'dinh1@gmail.com', '$2b$12$KVhV/jjY8PcpGHA88fSVsen4cvZq/LKT5Vg2h8eVM.XYXtGnq2RX6'),
-('dinh2', 'dinh2@gmail.com', '$2b$12$KVhV/jjY8PcpGHA88fSVsen4cvZq/LKT5Vg2h8eVM.XYXtGnq2RX6'),
-('dinh3', 'dinh3@gmail.com', '$2b$12$KVhV/jjY8PcpGHA88fSVsen4cvZq/LKT5Vg2h8eVM.XYXtGnq2RX6');
+INSERT INTO users (name, email, password, role) VALUES
+('dinh1', 'dinh1@gmail.com', '$2b$12$KVhV/jjY8PcpGHA88fSVsen4cvZq/LKT5Vg2h8eVM.XYXtGnq2RX6', 'admin'),
+('dinh2', 'dinh2@gmail.com', '$2b$12$KVhV/jjY8PcpGHA88fSVsen4cvZq/LKT5Vg2h8eVM.XYXtGnq2RX6', 'user'),
+('dinh3', 'dinh3@gmail.com', '$2b$12$KVhV/jjY8PcpGHA88fSVsen4cvZq/LKT5Vg2h8eVM.XYXtGnq2RX6', 'user');
