@@ -38,6 +38,7 @@ use {
         Extension,
         Json,
     },
+    axum_chat_app::only_role,
     diesel::{
         insert_into,
         prelude::*,
@@ -47,6 +48,7 @@ use {
     uuid::Uuid,
 };
 
+#[only_role("admin", "user")]
 pub async fn create_group(
     Extension(db): Extension<Arc<Database>>,
     Extension(sender): Extension<User>,
@@ -60,7 +62,12 @@ pub async fn create_group(
 
     let mut conn = db.get_connection().await;
 
+    // get user ids from emails or usernames
     let mut user_ids: Vec<Uuid> = if let Some(user_emails) = user_emails {
+        if user_emails.contains(&sender.email) {
+            return Err(Error::KeyDuplicate);
+        }
+
         users::table
             .filter(users::email.eq_any(user_emails))
             .select(users::id)
@@ -110,9 +117,9 @@ pub async fn create_group(
         StatusCode::CREATED,
         Json(GenericResponse {
             status: StatusCode::CREATED.to_string(),
-            result: DataResponse::<String> {
+            result: DataResponse {
                 msg: "success".into(),
-                data: None,
+                data: Some(GroupResponse::from(new_group)),
             },
         }),
     ))
@@ -140,7 +147,8 @@ pub async fn get_group_by_id(
 
     let result = GroupResponse {
         id: group.id,
-        users: users.into_iter().map(|u| u.into()).collect::<Vec<_>>(),
+        name: group.name,
+        users: Some(users.into_iter().map(|u| u.into()).collect::<Vec<_>>()),
     };
 
     Ok((
@@ -150,6 +158,43 @@ pub async fn get_group_by_id(
             result: DataResponse {
                 msg: "success".into(),
                 data: Some(result),
+            },
+        }),
+    ))
+}
+
+#[only_role("user", "admin")]
+pub async fn get_all_groups_of_user(
+    Extension(db): Extension<Arc<Database>>,
+    Extension(sender): Extension<User>,
+    Path(user_id): Path<Uuid>,
+) -> Result<impl IntoResponse> {
+    let mut conn = db.get_connection().await;
+
+    let user = users::table
+        .find(user_id)
+        .select(User::as_select())
+        .first::<User>(&mut conn)
+        .await
+        .map_err(|_| Error::RecordNotFound)?;
+
+    let groups = UserGroup::belonging_to(&user)
+        .inner_join(groups::table)
+        .select(Group::as_select())
+        .load(&mut conn)
+        .await
+        .map_err(|e| Error::QueryFailed(e))?
+        .into_iter()
+        .map(|g| GroupResponse::from(g))
+        .collect::<Vec<_>>();
+
+    Ok((
+        StatusCode::OK,
+        Json(GenericResponse {
+            status: StatusCode::OK.to_string(),
+            result: DataResponse {
+                msg: "success".into(),
+                data: Some(groups),
             },
         }),
     ))

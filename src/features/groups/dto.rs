@@ -1,4 +1,5 @@
 use {
+    super::models::Group as GroupModel,
     crate::features::users::dto::UserResponse,
     serde::{
         Deserialize,
@@ -17,5 +18,16 @@ pub struct CreateGroup {
 #[derive(Debug, Serialize)]
 pub struct GroupResponse {
     pub id: Uuid,
-    pub users: Vec<UserResponse>,
+    pub name: String,
+    pub users: Option<Vec<UserResponse>>,
+}
+
+impl From<GroupModel> for GroupResponse {
+    fn from(value: GroupModel) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            users: None,
+        }
+    }
 }
