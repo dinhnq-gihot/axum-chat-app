@@ -53,7 +53,7 @@ pub async fn check_jwt(
         .filter(users::id.eq(user_id))
         .first::<User>(&mut conn)
         .await
-        .map_err(|_| Error::RecordNotFound)?;
+        .map_err(|_| Error::InvalidCredentials)?;
 
     drop(conn);
 
