@@ -49,12 +49,14 @@ async fn main() -> Result<()> {
     // load environment variables from a .env file
     dotenv().ok();
 
-    let (layer, io) = SocketIo::new_layer();
-    io.ns("/", on_connect.with(check_login));
-
     let db_url =
         env::var("DATABASE_URL").map_err(|_| Error::EnvVarNotFound("DATABASE_URL".to_string()))?;
     let db = Arc::new(Database::try_new(db_url).await?);
+
+    let (layer, io) = SocketIo::builder()
+        .with_state(Arc::clone(&db))
+        .build_layer();
+    io.ns("/", on_connect.with(check_login));
 
     let host = env::var("HOST").map_err(|_| Error::EnvVarNotFound("HOST".to_string()))?;
     let port = env::var("PORT").map_err(|_| Error::EnvVarNotFound("PORT".to_string()))?;
