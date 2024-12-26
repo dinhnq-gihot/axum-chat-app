@@ -1,12 +1,15 @@
 use {
     crate::{
         database::Database,
-        features::chat::{
-            dto::Chat,
-            services::{
-                get_all_msgs_in_group,
-                insert_chat,
+        features::{
+            chat::{
+                dto::Chat,
+                services::{
+                    get_all_msgs_in_group,
+                    insert_chat,
+                },
             },
+            groups::services::get_group_by_id,
         },
     },
     socketioxide::{
@@ -43,7 +46,10 @@ pub async fn handle_message(socket: SocketRef, Data(chat): Data<Chat>, db: State
 pub async fn handle_join(socket: SocketRef, Data(room): Data<Uuid>, db: State<Arc<Database>>) {
     debug!("Received join: {:?}", room);
 
-    let messages = get_all_msgs_in_group(db.0, room).await.unwrap();
+    let messages = get_all_msgs_in_group(Arc::clone(&db.0), room)
+        .await
+        .unwrap();
+    let room_name = get_group_by_id(Arc::clone(&db.0), room).await.unwrap().name;
 
     socket
         .leave_all()
@@ -57,7 +63,7 @@ pub async fn handle_join(socket: SocketRef, Data(room): Data<Uuid>, db: State<Ar
 
     socket
         .within(room.to_string())
-        .emit("join-room-back", &room)
+        .emit("join-room-back", &room_name)
         .map_err(|e| warn!("{}", e.to_string()))
         .unwrap();
 
