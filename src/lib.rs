@@ -8,9 +8,14 @@ use {
 };
 
 #[proc_macro_attribute]
-pub fn only_user(attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn only_role(attr: TokenStream, item: TokenStream) -> TokenStream {
     // Parse the required role from the macro's attribute
-    let role = attr.to_string().replace("\"", ""); // Parse "Admin" or "User" as string
+    let roles: Vec<String> = attr
+        .to_string()
+        .replace("\"", "") // Remove quotes
+        .split(',') // Split roles by comma
+        .map(|role| role.trim().to_string())
+        .collect();
 
     // Parse the input handler function
     let input_fn = parse_macro_input!(item as ItemFn);
@@ -34,36 +39,14 @@ pub fn only_user(attr: TokenStream, item: TokenStream) -> TokenStream {
                 Json,
             };
             use crate::features::users::models::User;
+            use crate::enums::errors::Error;
 
-            // Extract the user from the request extensions
-            let user = match Extension::<User>::from_request(&req).await {
-                Ok(user) => user,
-                Err(_) => {
-                    return (
-                        StatusCode::FORBIDDEN,
-                        Json(GenericResponse {
-                            status: StatusCode::FORBIDDEN.to_string(),
-                            result: DataResponse::<String> {
-                                msg: "Access denied: No user information".into(),
-                                data: None,
-                            },
-                        }),
-                    ).into_response()
-                }
-            };
+            // Check if the user's role is allowed
+            let allowed_roles = vec![#(#roles),*]; // Allowed roles from the macro input
 
             // Check the user's role
-            if user.role != #role {
-                return (
-                    StatusCode::FORBIDDEN,
-                    Json(GenericResponse {
-                        status: StatusCode::FORBIDDEN.to_string(),
-                        result: DataResponse::<String> {
-                            msg: format!("Access denied: {} role required", #role),
-                            data: None,
-                        },
-                    }),
-                ).into_response();
+            if !allowed_roles.contains(&sender.role.as_str()) {
+                return Err(Error::AccessDenied(sender.role));
             }
 
             // Continue executing the original handler
