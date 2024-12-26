@@ -1,74 +1,69 @@
 use {
-    super::models::{
-        JoinRoom,
-        MessageOut,
-    },
     crate::{
         database::Database,
-        enums::errors::*,
         features::chat::{
             dto::Chat,
-            services::insert_chat,
+            services::{
+                get_all_msgs_in_group,
+                insert_chat,
+            },
         },
     },
-    chrono::Utc,
     socketioxide::{
         extract::{
             Data,
             SocketRef,
+            State,
         },
         socket::DisconnectReason,
     },
     std::sync::Arc,
     tracing::{
+        debug,
         info,
         warn,
     },
+    uuid::Uuid,
 };
 
-pub async fn handle_message(socket: SocketRef, Data(chat): Data<Chat>) {
-    let db = socket
-        .req_parts()
-        .extensions
-        .get::<Arc<Database>>()
-        .ok_or(Error::DatabaseConnectionFailed)
-        .map_err(|e| warn!("{}", e.to_string()))
-        .unwrap();
+pub async fn handle_message(socket: SocketRef, Data(chat): Data<Chat>, db: State<Arc<Database>>) {
+    debug!("Received message: {:?}", chat);
 
-    insert_chat(Arc::clone(db), chat.clone())
+    let message_back = insert_chat(db.0, chat.clone())
         .await
         .map_err(|e| warn!("{}", e.to_string()))
         .unwrap();
 
-    let response = MessageOut {
-        content: chat.content,
-        user_id: chat.user_id,
-        group_id: chat.group_id,
-        created_at: Utc::now(),
-    };
-
     socket
         .within(chat.group_id.to_string())
-        .emit("message-back", &response)
-        .map_err(|e| warn!("{}", e.to_string()))
-        .unwrap();
+        .emit("message-back", &message_back)
+        .ok();
 }
 
-pub fn handle_join(socket: SocketRef, Data(data): Data<JoinRoom>) {
-    info!("Received join: {:?}", data);
+pub async fn handle_join(socket: SocketRef, Data(room): Data<Uuid>, db: State<Arc<Database>>) {
+    debug!("Received join: {:?}", room);
+
+    let messages = get_all_msgs_in_group(db.0, room).await.unwrap();
 
     socket
         .leave_all()
         .map_err(|e| warn!("{}", e.to_string()))
         .unwrap();
+
     socket
-        .join(data.room.to_string())
+        .join(room.to_string())
         .map_err(|e| warn!("{}", e.to_string()))
         .unwrap();
 
     socket
-        .within(data.room.to_string())
-        .emit("join-room-back", &data)
+        .within(room.to_string())
+        .emit("join-room-back", &room)
+        .map_err(|e| warn!("{}", e.to_string()))
+        .unwrap();
+
+    socket
+        .within(room.to_string())
+        .emit("messages", &messages)
         .map_err(|e| warn!("{}", e.to_string()))
         .unwrap();
 }

@@ -21,6 +21,7 @@ pub async fn check_login(socket: SocketRef) -> Result<()> {
         .ok_or(Error::TokenNotFound)?
         .to_str()
         .or_else(|e| Err(Error::Anyhow(e.into())))?;
+    println!("check login");
 
     Ok(())
 }
