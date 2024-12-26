@@ -48,12 +48,13 @@ pub enum Error {
     // File errors
     #[error("Create file failed")]
     CreateFileFailed,
-
     #[error("File type invalid")]
     FileTypeInvalid,
-
     #[error("Field not found: {0}")]
     FieldNotFound(String),
+
+    #[error("Duplicate key value")]
+    KeyDuplicate,
 
     // JWT errors
     #[error("JWT decode failed: {0}")]
@@ -74,6 +75,10 @@ pub enum Error {
     // anyhow error
     #[error(transparent)]
     Anyhow(#[from] anyhow::Error),
+
+    // Access denied
+    #[error("Access denied: {0} role required")]
+    AccessDenied(String),
 }
 
 impl IntoResponse for Error {
@@ -93,6 +98,20 @@ impl IntoResponse for Error {
                 )
                     .into_response()
             }
+            Error::AccessDenied(role) => {
+                (
+                    StatusCode::FORBIDDEN,
+                    Json(GenericResponse {
+                        status: StatusCode::FORBIDDEN.to_string(),
+                        result: DataResponse::<String> {
+                            msg: format!("Access denied: Role '{}' is not allowed", role),
+                            data: None,
+                        },
+                    }),
+                )
+                    .into_response()
+            }
+
             // Handle other errors as internal server errors
             _ => {
                 (
