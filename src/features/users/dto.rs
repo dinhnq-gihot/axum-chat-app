@@ -28,6 +28,7 @@ pub struct UserResponse {
     pub name: String,
     pub email: String,
     pub avatar: Option<String>,
+    pub role: String,
     pub is_online: bool,
 }
 
@@ -38,6 +39,7 @@ impl From<UserModel> for UserResponse {
             name: value.name,
             email: value.email,
             avatar: value.avatar,
+            role: value.role,
             is_online: value.is_online.unwrap_or(false),
         }
     }

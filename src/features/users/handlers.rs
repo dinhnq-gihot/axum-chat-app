@@ -34,6 +34,7 @@ use {
         Extension,
         Json,
     },
+    axum_chat_app::only_role,
     diesel::{
         delete,
         insert_into,
@@ -118,6 +119,7 @@ pub async fn get_user_by_id(
     ))
 }
 
+// #[only_role("admin")]
 pub async fn get_all_user(Extension(db): Extension<Arc<Database>>) -> Result<impl IntoResponse> {
     let mut conn = db.get_connection().await;
     let users = users::table
@@ -141,9 +143,10 @@ pub async fn get_all_user(Extension(db): Extension<Arc<Database>>) -> Result<imp
     ))
 }
 
+#[only_role("user")]
 pub async fn update_user(
     Extension(db): Extension<Arc<Database>>,
-    Path(id): Path<Uuid>,
+    Extension(sender): Extension<User>,
     Json(payload): Json<UpdateUserRequest>,
 ) -> Result<impl IntoResponse> {
     let UpdateUserRequest {
@@ -154,7 +157,7 @@ pub async fn update_user(
 
     let mut conn = db.get_connection().await;
     let mut existed_user: User = users::table
-        .find(id)
+        .find(sender.id)
         .select(User::as_select())
         .first(&mut conn)
         .await
@@ -170,7 +173,7 @@ pub async fn update_user(
         existed_user.avatar = avatar;
     }
 
-    update(users::table.filter(users::id.eq(id)))
+    update(users::table.filter(users::id.eq(sender.id)))
         .set(existed_user)
         .returning(User::as_returning())
         .get_result(&mut conn)
@@ -189,8 +192,10 @@ pub async fn update_user(
     ))
 }
 
+#[only_role("admin")]
 pub async fn delete_user(
     Extension(db): Extension<Arc<Database>>,
+    Extension(sender): Extension<User>,
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse> {
     let mut conn = db.get_connection().await;
@@ -211,9 +216,10 @@ pub async fn delete_user(
     ))
 }
 
+#[only_role("user")]
 pub async fn update_avatar(
     Extension(db): Extension<Arc<Database>>,
-    Path(id): Path<Uuid>,
+    Extension(sender): Extension<User>,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse> {
     let mut updated = false;
@@ -237,7 +243,7 @@ pub async fn update_avatar(
             if regex.is_match(&content_type) {
                 let mut conn = db.get_connection().await;
                 let mut existed_user: User = users::table
-                    .find(id)
+                    .find(sender.id)
                     .select(User::as_select())
                     .first(&mut conn)
                     .await

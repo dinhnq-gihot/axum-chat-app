@@ -12,6 +12,7 @@ pub struct User {
     pub email: String,
     pub password: String,
     pub avatar: Option<String>,
+    pub role: String,
     pub is_online: Option<bool>,
 }
 
@@ -23,6 +24,7 @@ impl Default for User {
             email: Default::default(),
             password: Default::default(),
             avatar: Default::default(),
+            role: "user".into(),
             is_online: Default::default(),
         }
     }
