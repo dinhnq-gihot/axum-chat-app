@@ -36,7 +36,7 @@ use {
         QueryDsl,
     },
     diesel_async::RunQueryDsl,
-    std::sync::Arc,
+    std::sync::Arc, tracing::debug,
 };
 
 #[utoipa::path(
@@ -54,6 +54,8 @@ pub async fn login(
     Extension(db): Extension<Arc<Database>>,
     Json(payload): Json<LoginRequest>,
 ) -> Result<impl IntoResponse> {
+    debug!("login: payload {payload:?}");
+
     let LoginRequest { email, password } = payload;
 
     let mut conn = db.get_connection().await;
@@ -99,6 +101,8 @@ pub async fn register(
     Extension(db): Extension<Arc<Database>>,
     Json(payload): Json<RegisterRequest>,
 ) -> Result<impl IntoResponse> {
+    debug!("register: payload {payload:?}");
+
     let RegisterRequest {
         username,
         email,

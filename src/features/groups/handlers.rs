@@ -45,6 +45,7 @@ use {
     },
     diesel_async::RunQueryDsl,
     std::sync::Arc,
+    tracing::debug,
     uuid::Uuid,
 };
 
@@ -69,6 +70,8 @@ pub async fn create_group(
     Extension(sender): Extension<User>,
     Json(payload): Json<CreateGroup>,
 ) -> Result<impl IntoResponse> {
+    debug!("create_group: sender {sender:?}, payload {payload:?}");
+
     let CreateGroup {
         group_name,
         user_emails,
@@ -161,10 +164,14 @@ pub async fn create_group(
     ),
     tag = "Groups"
 )]
+#[only_role("user", "admin")]
 pub async fn get_group_by_id(
     Extension(db): Extension<Arc<Database>>,
+    Extension(sender): Extension<User>,
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse> {
+    debug!("get_group_by_id: sender: {sender:?}, id: {id}");
+
     let mut conn = db.get_connection().await;
 
     let group = groups::table
@@ -222,6 +229,8 @@ pub async fn get_all_groups_of_user(
     Extension(sender): Extension<User>,
     Path(user_id): Path<Uuid>,
 ) -> Result<impl IntoResponse> {
+    debug!("get_all_groups_of_user: sender {sender:?}, user_id {user_id}");
+
     let mut conn = db.get_connection().await;
 
     let user = users::table

@@ -11,6 +11,7 @@ use {
             },
             groups::services::get_group_by_id,
         },
+        warn,
     },
     socketioxide::{
         extract::{
@@ -24,7 +25,6 @@ use {
     tracing::{
         debug,
         info,
-        warn,
     },
     uuid::Uuid,
 };

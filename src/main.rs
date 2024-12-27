@@ -2,11 +2,13 @@ pub mod api_docs;
 pub mod database;
 pub mod enums;
 pub mod features;
+pub mod logger;
 mod router;
 pub mod schema;
 pub mod socket;
 pub mod utils;
 
+pub use tracing;
 use {
     api_docs::ApiDoc,
     axum::{
@@ -40,15 +42,13 @@ use {
         trace::TraceLayer,
     },
     tracing::info,
-    tracing_subscriber::FmtSubscriber,
     utoipa::OpenApi,
     utoipa_swagger_ui::SwaggerUi,
 };
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing::subscriber::set_global_default(FmtSubscriber::default())
-        .map_err(|e| Error::Anyhow(e.into()))?;
+    logger::init(None, true).map_err(|e| Error::Anyhow(e))?;
 
     // load environment variables from a .env file
     dotenv().ok();

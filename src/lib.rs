@@ -1,5 +1,3 @@
-
-
 use {
     proc_macro::TokenStream,
     quote::quote,

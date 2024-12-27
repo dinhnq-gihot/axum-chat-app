@@ -23,6 +23,7 @@ use {
             },
         },
         schema::users,
+        warn,
     },
     axum::{
         extract::{
@@ -69,7 +70,10 @@ pub async fn create_user(
         })
         .execute(&mut conn)
         .await
-        .map_err(|e| Error::InsertFailed(e))?;
+        .map_err(|e| {
+            warn!("{}", e.to_string());
+            Error::InsertFailed(e)
+        })?;
 
     Ok((
         StatusCode::OK,
@@ -104,27 +108,17 @@ pub async fn get_user_by_id(
     Extension(sender): Extension<User>,
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse> {
+    debug!("get_user_by_id: sender {:?}, id {id}", sender);
+
     let mut conn = db.get_connection().await;
-    let user = match users::table
+    let user = users::table
         .find(id)
         .select(User::as_select())
         .first::<User>(&mut conn)
         .await
-    {
-        Ok(user) => Some(user),
-        Err(e) => {
-            match e {
-                diesel::NotFound => None,
-                e => return Err(Error::QueryFailed(e)),
-            }
-        }
-    };
+        .map_err(|_| Error::RecordNotFound)?;
 
-    let result = if let Some(u) = user {
-        Some(UserResponse::from(u))
-    } else {
-        None
-    };
+    let result = UserResponse::from(user);
 
     Ok((
         StatusCode::OK,
@@ -132,7 +126,7 @@ pub async fn get_user_by_id(
             status: StatusCode::OK.to_string(),
             result: DataResponse {
                 msg: "success".into(),
-                data: result,
+                data: Some(result),
             },
         }),
     ))
@@ -155,6 +149,8 @@ pub async fn get_all_user(
     Extension(db): Extension<Arc<Database>>,
     Extension(sender): Extension<User>,
 ) -> Result<impl IntoResponse> {
+    debug!("get_all_user: sender {sender:?}");
+
     let mut conn = db.get_connection().await;
     let users = users::table
         .select(User::as_select())
@@ -195,6 +191,8 @@ pub async fn update_user(
     Extension(sender): Extension<User>,
     Json(payload): Json<UpdateUserRequest>,
 ) -> Result<impl IntoResponse> {
+    debug!("update_user: sender {sender:?}, payload: {payload:?}");
+
     let UpdateUserRequest {
         name,
         email,
@@ -258,6 +256,8 @@ pub async fn delete_user(
     Extension(sender): Extension<User>,
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse> {
+    debug!("delete_user: sender {:?}, id {id}", sender);
+
     let mut conn = db.get_connection().await;
     delete(users::table.filter(users::id.eq(id)))
         .execute(&mut conn)
@@ -295,6 +295,8 @@ pub async fn update_avatar(
     Extension(sender): Extension<User>,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse> {
+    debug!("update_avatar: sender {sender:?}, multipart: {multipart:?}");
+
     let mut updated = false;
     while let Some(field) = multipart
         .next_field()

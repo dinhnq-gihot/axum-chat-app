@@ -6,6 +6,7 @@ use {
         features::users::models::User,
         schema::users,
         utils::jwt::decode_jwt,
+        warn,
     },
     axum::{
         extract::Request,
@@ -31,9 +32,15 @@ pub async fn check_jwt(
 ) -> Result<impl IntoResponse> {
     let token = headers
         .get(AUTHORIZATION)
-        .ok_or(Error::TokenNotFound)?
+        .ok_or_else(|| {
+            warn!("check_jwt: TokenNotFound");
+            Error::TokenNotFound
+        })?
         .to_str()
-        .or_else(|e| Err(Error::Anyhow(e.into())))?;
+        .or_else(|e| {
+            warn!("check_jwt: {}", e.to_string());
+            Err(Error::Anyhow(e.into()))
+        })?;
 
     let token = token.replace("Bearer ", "");
 
@@ -42,10 +49,10 @@ pub async fn check_jwt(
         exp: _,
         user_id,
     } = decode_jwt(token)?;
-    let db = request
-        .extensions()
-        .get::<Arc<Database>>()
-        .ok_or(Error::DatabaseConnectionFailed)?;
+    let db = request.extensions().get::<Arc<Database>>().ok_or_else(|| {
+        warn!("check_jwt: DatabaseConnectionFailed");
+        Error::DatabaseConnectionFailed
+    })?;
     let mut conn = db.get_connection().await;
 
     let user = users::table
