@@ -36,6 +36,10 @@ mime = "0.3.17"
 regex = "1.11.1"
 bcrypt = "0.16.0"
 
+# docs
+utoipa-swagger-ui = { version = "8.1.0", features = ["axum"] }
+utoipa = { version = "5.3.0", features = ["axum_extras", "uuid"] }
+
 # db
 diesel = { version = "2.2.6", features = [
     "extras",

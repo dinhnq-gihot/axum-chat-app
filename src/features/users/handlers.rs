@@ -52,8 +52,10 @@ use {
     uuid::Uuid,
 };
 
+#[only_role("admin")]
 pub async fn create_user(
     Extension(db): Extension<Arc<Database>>,
+    Extension(sender): Extension<User>,
     Json(payload): Json<CreateUserRequest>,
 ) -> Result<impl IntoResponse> {
     let mut conn = db.get_connection().await;
@@ -81,8 +83,25 @@ pub async fn create_user(
     ))
 }
 
+#[utoipa::path(
+    get,
+    context_path = "/api",
+    path = "/users/{id}",
+    params(
+        ("id" = Uuid, description = "User ID")
+    ),
+    operation_id = "get_user_by_id",
+    responses(
+        (status = 200, description = "User found", body = GenericResponse<UserResponse>),
+        (status = 404, description = "User not found")
+    ),
+    security(("bearerAuth" = [])), // Apply JWT security only here
+    tag = "Users"
+)]
+#[only_role("user", "admin")]
 pub async fn get_user_by_id(
     Extension(db): Extension<Arc<Database>>,
+    Extension(sender): Extension<User>,
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse> {
     let mut conn = db.get_connection().await;
@@ -119,8 +138,23 @@ pub async fn get_user_by_id(
     ))
 }
 
-// #[only_role("admin")]
-pub async fn get_all_user(Extension(db): Extension<Arc<Database>>) -> Result<impl IntoResponse> {
+#[utoipa::path(
+    get,
+    context_path = "/api",
+    path = "/users",
+    responses(
+        (status = 200, description = "List of users", body = GenericResponse<Vec<UserResponse>>),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    operation_id = "get_all_user",
+    security(("bearerAuth" = [])), // Apply JWT security only here
+    tag = "Users"
+)]
+#[only_role("admin")]
+pub async fn get_all_user(
+    Extension(db): Extension<Arc<Database>>,
+    Extension(sender): Extension<User>,
+) -> Result<impl IntoResponse> {
     let mut conn = db.get_connection().await;
     let users = users::table
         .select(User::as_select())
@@ -143,6 +177,18 @@ pub async fn get_all_user(Extension(db): Extension<Arc<Database>>) -> Result<imp
     ))
 }
 
+#[utoipa::path(
+    patch,
+    context_path = "/api",
+    path = "/users",
+    request_body = UpdateUserRequest,
+    responses(
+        (status = 202, description = "User updated successfully", body = GenericResponse<String>),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearerAuth" = [])), // Apply JWT security only here
+    tag = "Users"
+)]
 #[only_role("user")]
 pub async fn update_user(
     Extension(db): Extension<Arc<Database>>,
@@ -185,13 +231,27 @@ pub async fn update_user(
         Json(GenericResponse {
             status: StatusCode::ACCEPTED.to_string(),
             result: DataResponse::<String> {
-                msg: "success".into(),
+                msg: "User updated successfully".into(),
                 data: None,
             },
         }),
     ))
 }
 
+#[utoipa::path(
+    delete,
+    context_path = "/api",
+    path = "/users/{id}",
+    params(
+        ("id" = Uuid, Path, description = "User ID")
+    ),
+    responses(
+        (status = 204, description = "User deleted successfully", body = GenericResponse<String>),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearerAuth" = [])), // Apply JWT security only here
+    tag = "Users"
+)]
 #[only_role("admin")]
 pub async fn delete_user(
     Extension(db): Extension<Arc<Database>>,
@@ -216,6 +276,19 @@ pub async fn delete_user(
     ))
 }
 
+#[utoipa::path(
+    post,
+    context_path = "/api",
+    path = "/users/avatar",
+    request_body(content_type = "multipart/form-data"),
+    responses(
+        (status = 202, description = "Avatar updated successfully", body = GenericResponse<String>),
+        (status = 400, description = "Invalid file type or field not found"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearerAuth" = [])), // Apply JWT security only here
+    tag = "Users"
+)]
 #[only_role("user")]
 pub async fn update_avatar(
     Extension(db): Extension<Arc<Database>>,
@@ -279,7 +352,7 @@ pub async fn update_avatar(
             Json(GenericResponse {
                 status: StatusCode::ACCEPTED.to_string(),
                 result: DataResponse::<String> {
-                    msg: "success".into(),
+                    msg: "Avatar updated successfully".into(),
                     data: None,
                 },
             }),

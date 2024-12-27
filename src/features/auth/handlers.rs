@@ -32,13 +32,24 @@ use {
     },
     diesel::{
         insert_into,
-        query_dsl::methods::FilterDsl,
         ExpressionMethods,
+        QueryDsl,
     },
     diesel_async::RunQueryDsl,
     std::sync::Arc,
 };
 
+#[utoipa::path(
+    post,
+    context_path = "/api",
+    path = "/auth/login",
+    request_body = LoginRequest,
+    responses(
+        (status = 200, description = "Login Success", body = GenericResponse<String>),
+        (status = 401, description = "Invalid Credentials")
+    ),
+    tag = "Authentication"
+)]
 pub async fn login(
     Extension(db): Extension<Arc<Database>>,
     Json(payload): Json<LoginRequest>,
@@ -62,9 +73,9 @@ pub async fn login(
     let token = jwt::encode_jwt(user.id, user.email)?;
 
     Ok((
-        StatusCode::CREATED,
+        StatusCode::OK,
         Json(GenericResponse {
-            status: StatusCode::CREATED.to_string(),
+            status: StatusCode::OK.to_string(),
             result: DataResponse {
                 msg: "Login Success".into(),
                 data: Some(token),
@@ -73,21 +84,50 @@ pub async fn login(
     ))
 }
 
+#[utoipa::path(
+    post,
+    context_path = "/api",
+    path = "/auth/register",
+    request_body = RegisterRequest,
+    responses(
+        (status = 201, description = "Register Success", body = GenericResponse<String>),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "Authentication"
+)]
 pub async fn register(
     Extension(db): Extension<Arc<Database>>,
     Json(payload): Json<RegisterRequest>,
 ) -> Result<impl IntoResponse> {
+    let RegisterRequest {
+        username,
+        email,
+        avatar,
+        password,
+    } = payload;
+
     let mut conn = db.get_connection().await;
 
-    let hashed_password =
-        hash(&payload.password, DEFAULT_COST).map_err(|_| Error::HashingFailed)?;
+    // Count the number of users with the given email
+    let user_count = users::table
+        .filter(users::email.eq(&email))
+        .count()
+        .get_result::<i64>(&mut conn)
+        .await
+        .map_err(Error::QueryFailed)?;
+
+    if user_count > 0 {
+        return Err(Error::UserAlreadyExists);
+    }
+
+    let hashed_password = hash(&password, DEFAULT_COST).map_err(|_| Error::HashingFailed)?;
 
     insert_into(users::table)
         .values(NewUser {
-            name: &payload.username,
-            email: &payload.email,
+            name: &username,
+            email: &email,
             password: &hashed_password,
-            avatar: payload.avatar.as_deref(),
+            avatar: avatar.as_deref(),
         })
         .execute(&mut conn)
         .await
@@ -96,9 +136,9 @@ pub async fn register(
     Ok((
         StatusCode::OK,
         Json(GenericResponse {
-            status: StatusCode::CREATED.to_string(),
+            status: StatusCode::OK.to_string(),
             result: DataResponse::<String> {
-                msg: "created user successfully".into(),
+                msg: "Register successfully".into(),
                 data: None,
             },
         }),

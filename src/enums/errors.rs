@@ -44,6 +44,8 @@ pub enum Error {
     RecordNotFound,
     #[error("Delete failed: {0}")]
     DeleteFailed(#[source] diesel::result::Error),
+    #[error("User already exists")]
+    UserAlreadyExists,
 
     // File errors
     #[error("Create file failed")]
@@ -53,8 +55,8 @@ pub enum Error {
     #[error("Field not found: {0}")]
     FieldNotFound(String),
 
-    #[error("Duplicate key value")]
-    KeyDuplicate,
+    #[error("Not self assign")]
+    NotSelfAssign,
 
     // JWT errors
     #[error("JWT decode failed: {0}")]
@@ -67,7 +69,7 @@ pub enum Error {
     TokenNotFound,
     #[error("Hash password failed")]
     HashingFailed,
-    #[error("VerifyPasswordFailed")]
+    #[error("Verify password failed")]
     VerifyPasswordFailed,
     #[error("Invalid credentials")]
     InvalidCredentials,
@@ -85,7 +87,7 @@ impl IntoResponse for Error {
     fn into_response(self) -> Response {
         match self {
             // Handle authorization error
-            Error::TokenNotFound | Error::InvalidCredentials => {
+            Error::TokenNotFound | Error::InvalidCredentials | Error::DecodeJwtFailed(_) => {
                 (
                     StatusCode::UNAUTHORIZED,
                     Json(GenericResponse {
@@ -105,6 +107,19 @@ impl IntoResponse for Error {
                         status: StatusCode::FORBIDDEN.to_string(),
                         result: DataResponse::<String> {
                             msg: format!("Access denied: Role '{}' is not allowed", role),
+                            data: None,
+                        },
+                    }),
+                )
+                    .into_response()
+            }
+            Error::RecordNotFound => {
+                (
+                    StatusCode::NOT_FOUND,
+                    Json(GenericResponse {
+                        status: StatusCode::NOT_FOUND.to_string(),
+                        result: DataResponse::<String> {
+                            msg: "Record Not Found".into(),
                             data: None,
                         },
                     }),

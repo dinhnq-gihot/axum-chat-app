@@ -4,6 +4,7 @@ use {
         Deserialize,
         Serialize,
     },
+    utoipa::ToSchema,
     uuid::Uuid,
 };
 
@@ -15,14 +16,14 @@ pub struct CreateUserRequest {
     pub password: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct UpdateUserRequest {
     pub name: Option<String>,
     pub email: Option<String>,
     pub avatar: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct UserResponse {
     pub id: Uuid,
     pub name: String,

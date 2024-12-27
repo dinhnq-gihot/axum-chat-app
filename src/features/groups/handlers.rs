@@ -48,6 +48,21 @@ use {
     uuid::Uuid,
 };
 
+#[utoipa::path(
+    post,
+    context_path = "/api",
+    path = "/groups",
+    request_body = CreateGroup,
+    responses(
+        (status = 201, description = "Group created successfully", body = GenericResponse<GroupResponse>),
+        (status = 400, description = "Bad request"),
+        (status = 500, description = "Internal server error")
+    ),
+    security(
+        ("bearerAuth" = [])
+    ),
+    tag = "Groups"
+)]
 #[only_role("admin", "user")]
 pub async fn create_group(
     Extension(db): Extension<Arc<Database>>,
@@ -65,7 +80,7 @@ pub async fn create_group(
     // get user ids from emails or usernames
     let mut user_ids: Vec<Uuid> = if let Some(user_emails) = user_emails {
         if user_emails.contains(&sender.email) {
-            return Err(Error::KeyDuplicate);
+            return Err(Error::NotSelfAssign);
         }
 
         users::table
@@ -75,6 +90,10 @@ pub async fn create_group(
             .await
             .map_err(|e| Error::QueryFailed(e))?
     } else if let Some(user_names) = user_names {
+        if user_names.contains(&sender.name) {
+            return Err(Error::NotSelfAssign);
+        }
+
         users::table
             .filter(users::name.eq_any(user_names))
             .select(users::id)
@@ -118,13 +137,30 @@ pub async fn create_group(
         Json(GenericResponse {
             status: StatusCode::CREATED.to_string(),
             result: DataResponse {
-                msg: "success".into(),
+                msg: "Group created successfully".into(),
                 data: Some(GroupResponse::from(new_group)),
             },
         }),
     ))
 }
 
+#[utoipa::path(
+    get,
+    context_path = "/api",
+    path = "/groups/{id}",
+    responses(
+        (status = 200, description = "Group found", body = GenericResponse<GroupResponse>),
+        (status = 404, description = "Group not found"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    params(
+        ("id" = Uuid, Path, description = "Group ID")
+    ),
+    security(
+        ("bearerAuth" = [])
+    ),
+    tag = "Groups"
+)]
 pub async fn get_group_by_id(
     Extension(db): Extension<Arc<Database>>,
     Path(id): Path<Uuid>,
@@ -163,6 +199,23 @@ pub async fn get_group_by_id(
     ))
 }
 
+#[utoipa::path(
+    get,
+    context_path = "/api",
+    path = "/groups/user/{user_id}",
+    responses(
+        (status = 200, description = "Groups retrieved successfully", body = GenericResponse<Vec<GroupResponse>>),
+        (status = 404, description = "Record not found"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    params(
+        ("user_id" = Uuid, Path, description = "User ID")
+    ),
+    security(
+        ("bearerAuth" = [])
+    ),
+    tag = "Groups"
+)]
 #[only_role("user", "admin")]
 pub async fn get_all_groups_of_user(
     Extension(db): Extension<Arc<Database>>,

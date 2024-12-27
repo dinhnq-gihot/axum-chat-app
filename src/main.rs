@@ -1,3 +1,4 @@
+pub mod api_docs;
 pub mod database;
 pub mod enums;
 pub mod features;
@@ -7,6 +8,7 @@ pub mod socket;
 pub mod utils;
 
 use {
+    api_docs::ApiDoc,
     axum::{
         http::HeaderValue,
         Extension,
@@ -39,6 +41,8 @@ use {
     },
     tracing::info,
     tracing_subscriber::FmtSubscriber,
+    utoipa::OpenApi,
+    utoipa_swagger_ui::SwaggerUi,
 };
 
 #[tokio::main]
@@ -67,6 +71,7 @@ async fn main() -> Result<()> {
         .map_err(|e| Error::Anyhow(e.into()))?;
 
     let app = create_router()
+        .merge(SwaggerUi::new("/swagger-ui").url("/api-doc/openapi.json", ApiDoc::openapi()))
         .fallback_service(ServeDir::new("public"))
         .layer(
             ServiceBuilder::new()
