@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use {
     super::{
         dto::{
@@ -13,10 +14,7 @@ use {
     crate::{
         database::Database,
         enums::{
-            errors::{
-                Error,
-                Result,
-            },
+            errors::*,
             types::{
                 DataResponse,
                 GenericResponse,
@@ -53,6 +51,19 @@ use {
     uuid::Uuid,
 };
 
+#[utoipa::path(
+    post,
+    context_path = "/api",
+    path = "/users",
+    request_body = CreateUserRequest,
+    responses(
+        (status = 201, description = "User created successfully", body = GenericResponse<String>),
+        (status = 400, description = "Bad Request"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    security(("bearerAuth" = [])), // Apply JWT security only here
+    tag = "Users"
+)]
 #[only_role("admin")]
 pub async fn create_user(
     Extension(db): Extension<Arc<Database>>,
@@ -61,12 +72,32 @@ pub async fn create_user(
 ) -> Result<impl IntoResponse> {
     let mut conn = db.get_connection().await;
 
+    // Count the number of users with the given email
+    let user_email_count = users::table
+        .filter(users::email.eq(&payload.email))
+        .count()
+        .get_result::<i64>(&mut conn)
+        .await
+        .map_err(Error::QueryFailed)?;
+
+    let username_count = users::table
+        .filter(users::name.eq(&payload.username))
+        .count()
+        .get_result::<i64>(&mut conn)
+        .await
+        .map_err(Error::QueryFailed)?;
+
+    if user_email_count > 0 || username_count > 0 {
+        return Err(Error::UserAlreadyExists);
+    }
+
     insert_into(users::table)
         .values(NewUser {
             name: &payload.username,
             email: &payload.email,
             password: &payload.password,
-            avatar: payload.avatar.as_deref(),
+            role: &payload.role.unwrap_or("user".to_string()),
+            avatar: None,
         })
         .execute(&mut conn)
         .await

@@ -113,14 +113,21 @@ pub async fn register(
     let mut conn = db.get_connection().await;
 
     // Count the number of users with the given email
-    let user_count = users::table
+    let user_email_count = users::table
         .filter(users::email.eq(&email))
         .count()
         .get_result::<i64>(&mut conn)
         .await
         .map_err(Error::QueryFailed)?;
 
-    if user_count > 0 {
+    let username_count = users::table
+        .filter(users::name.eq(&username))
+        .count()
+        .get_result::<i64>(&mut conn)
+        .await
+        .map_err(Error::QueryFailed)?;
+
+    if user_email_count > 0 || username_count > 0 {
         return Err(Error::UserAlreadyExists);
     }
 
@@ -132,6 +139,7 @@ pub async fn register(
             email: &email,
             password: &hashed_password,
             avatar: avatar.as_deref(),
+            role: "user"
         })
         .execute(&mut conn)
         .await

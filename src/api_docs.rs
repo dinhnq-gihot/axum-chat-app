@@ -54,6 +54,7 @@ impl Modify for SecurityAddon {
         create_group,
         get_group_by_id,
         get_all_groups_of_user,
+        create_user
     ),
     components(
         schemas(
@@ -63,6 +64,7 @@ impl Modify for SecurityAddon {
             UpdateUserRequest,
             CreateGroup,
             GroupResponse,
+            CreateUserRequest
         )
     ),
     tags(

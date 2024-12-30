@@ -8,12 +8,13 @@ use {
     uuid::Uuid,
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct CreateUserRequest {
     pub username: String,
     pub email: String,
     pub avatar: Option<String>,
     pub password: String,
+    pub role: Option<String>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]

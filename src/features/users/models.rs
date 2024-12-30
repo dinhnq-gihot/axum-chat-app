@@ -38,4 +38,5 @@ pub struct NewUser<'a> {
     pub email: &'a str,
     pub password: &'a str,
     pub avatar: Option<&'a str>,
+    pub role: &'a str,
 }
