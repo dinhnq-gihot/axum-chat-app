@@ -14,9 +14,9 @@ jobs:
     name: CI
     uses: ./.github/workflows/ci.yml
 
-  build-and-deploy:
+  deploy:
     name: Build and Deploy
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     permissions:
       contents: read
       packages: write
