@@ -48,7 +48,7 @@ use {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    logger::init(None, true).map_err(|e| Error::Anyhow(e))?;
+    logger::init(None, true).map_err(Error::Anyhow)?;
 
     // load environment variables from a .env file
     dotenv().ok();

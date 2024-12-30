@@ -54,7 +54,7 @@ pub async fn insert_chat(db: Arc<Database>, chat: Chat) -> Result<MessageOut> {
         .returning(Message::as_returning())
         .get_result::<Message>(&mut conn)
         .await
-        .map_err(|e| Error::InsertFailed(e))?;
+        .map_err(Error::InsertFailed)?;
 
     let user = users::table
         .find(message.user_id)
@@ -83,7 +83,7 @@ pub async fn get_all_msgs_in_group(db: Arc<Database>, group_id: Uuid) -> Result<
         .select(Message::as_select())
         .load::<Message>(&mut conn)
         .await
-        .map_err(|e| Error::QueryFailed(e))?;
+        .map_err(Error::QueryFailed)?;
 
     let users = get_all_user_in_group(Arc::clone(&db), group_id).await?;
 

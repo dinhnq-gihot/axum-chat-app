@@ -40,9 +40,9 @@ pub async fn check_jwt(
             Error::TokenNotFound
         })?
         .to_str()
-        .or_else(|e| {
+        .map_err(|e| {
             warn!("check_jwt: {}", e.to_string());
-            Err(Error::Anyhow(e.into()))
+            Error::Anyhow(e.into())
         })?;
 
     let token = token.replace("Bearer ", "");

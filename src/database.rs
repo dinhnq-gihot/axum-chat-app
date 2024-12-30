@@ -61,7 +61,7 @@ impl Database {
         let mut _conn = pool
             .get_owned()
             .await
-            .map_err(|e| Error::PoolConnectionFailed(e))?;
+            .map_err(Error::PoolConnectionFailed)?;
         MIGRATIONS
             .run_pending_migrations(&mut _conn)
             .await

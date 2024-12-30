@@ -96,7 +96,7 @@ pub async fn create_group(
             .select(users::id)
             .load(&mut conn)
             .await
-            .map_err(|e| Error::QueryFailed(e))?
+            .map_err(Error::QueryFailed)?
     } else if let Some(user_names) = user_names {
         if user_names.contains(&sender.name) {
             return Err(Error::NotSelfAssign);
@@ -107,7 +107,7 @@ pub async fn create_group(
             .select(users::id)
             .load(&mut conn)
             .await
-            .map_err(|e| Error::QueryFailed(e))?
+            .map_err(Error::QueryFailed)?
     } else {
         vec![]
     };
@@ -121,7 +121,7 @@ pub async fn create_group(
         .returning(Group::as_returning())
         .get_result(&mut conn)
         .await
-        .map_err(|e| Error::InsertFailed(e))?;
+        .map_err(Error::InsertFailed)?;
 
     user_ids.push(sender.id);
     let records = user_ids
@@ -138,7 +138,7 @@ pub async fn create_group(
         .values(records)
         .execute(&mut conn)
         .await
-        .map_err(|e| Error::InsertFailed(e))?;
+        .map_err(Error::InsertFailed)?;
 
     Ok((
         StatusCode::CREATED,
@@ -191,7 +191,7 @@ pub async fn get_group_by_id(
         .select(User::as_select())
         .load(&mut conn)
         .await
-        .map_err(|e| Error::QueryFailed(e))?;
+        .map_err(Error::QueryFailed)?;
 
     let result = GroupResponse {
         id: group.id,
@@ -250,9 +250,9 @@ pub async fn get_all_groups_of_user(
         .select(Group::as_select())
         .load(&mut conn)
         .await
-        .map_err(|e| Error::QueryFailed(e))?
+        .map_err(Error::QueryFailed)?
         .into_iter()
-        .map(|g| GroupResponse::from(g))
+        .map(GroupResponse::from)
         .collect::<Vec<_>>();
 
     Ok((

@@ -188,7 +188,7 @@ pub async fn get_all_user(
         .select(User::as_select())
         .load::<User>(&mut conn)
         .await
-        .map_err(|e| Error::QueryFailed(e))?
+        .map_err(Error::QueryFailed)?
         .into_iter()
         .map(UserResponse::from)
         .collect::<Vec<_>>();
@@ -254,7 +254,7 @@ pub async fn update_user(
         .returning(User::as_returning())
         .get_result(&mut conn)
         .await
-        .map_err(|e| Error::UpdateFailed(e))?;
+        .map_err(Error::UpdateFailed)?;
 
     Ok((
         StatusCode::ACCEPTED,
@@ -294,7 +294,7 @@ pub async fn delete_user(
     delete(users::table.filter(users::id.eq(id)))
         .execute(&mut conn)
         .await
-        .map_err(|e| Error::DeleteFailed(e))?;
+        .map_err(Error::DeleteFailed)?;
 
     Ok((
         StatusCode::NO_CONTENT,
@@ -347,7 +347,7 @@ pub async fn update_avatar(
             let regex =
                 Regex::new(mime::IMAGE_STAR.as_ref()).map_err(|e| Error::Anyhow(e.into()))?;
 
-            if regex.is_match(&content_type) {
+            if regex.is_match(content_type) {
                 let mut conn = db.get_connection().await;
                 let mut existed_user: User = users::table
                     .find(sender.id)
@@ -356,7 +356,7 @@ pub async fn update_avatar(
                     .await
                     .map_err(|_| Error::RecordNotFound)?;
 
-                let new_filename = format!("{filename}-{}.{extension}", Uuid::new_v4().to_string());
+                let new_filename = format!("{filename}-{}.{extension}", Uuid::new_v4());
                 existed_user.avatar = Some(new_filename.to_string());
 
                 let mut file = File::create(format!("public/uploads/{new_filename}"))
@@ -371,7 +371,7 @@ pub async fn update_avatar(
                     .set(existed_user)
                     .execute(&mut conn)
                     .await
-                    .map_err(|e| Error::UpdateFailed(e))?;
+                    .map_err(Error::UpdateFailed)?;
 
                 updated = true;
             } else {

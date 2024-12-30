@@ -36,7 +36,8 @@ use {
         QueryDsl,
     },
     diesel_async::RunQueryDsl,
-    std::sync::Arc, tracing::debug,
+    std::sync::Arc,
+    tracing::debug,
 };
 
 #[utoipa::path(
@@ -139,11 +140,11 @@ pub async fn register(
             email: &email,
             password: &hashed_password,
             avatar: avatar.as_deref(),
-            role: "user"
+            role: "user",
         })
         .execute(&mut conn)
         .await
-        .map_err(|e| Error::InsertFailed(e))?;
+        .map_err(Error::InsertFailed)?;
 
     Ok((
         StatusCode::OK,

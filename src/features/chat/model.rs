@@ -67,7 +67,7 @@ impl FromSql<MessageTypes, Pg> for MessageType {
             b"text" => Ok(MessageType::Text),
             b"file" => Ok(MessageType::File),
             b"image" => Ok(MessageType::Image),
-            _ => Err(format!("Unknown MessageType").into()),
+            _ => Err("Unknown MessageType".to_string().into()),
         }
     }
 }

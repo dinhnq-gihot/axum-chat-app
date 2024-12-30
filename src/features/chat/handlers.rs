@@ -64,7 +64,7 @@ pub async fn get_group_messages(
         .select(Message::as_select())
         .load::<Message>(&mut conn)
         .await
-        .map_err(|e| Error::QueryFailed(e))?;
+        .map_err(Error::QueryFailed)?;
 
     let result = messages
         .into_iter()

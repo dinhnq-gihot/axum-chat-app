@@ -59,9 +59,4 @@ diesel::joinable!(messages -> users (user_id));
 diesel::joinable!(users_groups -> groups (group_id));
 diesel::joinable!(users_groups -> users (user_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    groups,
-    messages,
-    users,
-    users_groups,
-);
+diesel::allow_tables_to_appear_in_same_query!(groups, messages, users, users_groups,);

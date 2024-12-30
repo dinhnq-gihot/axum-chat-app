@@ -58,9 +58,9 @@ impl Modify for SecurityAddon {
     ),
     components(
         schemas(
-            LoginRequest, 
-            RegisterRequest, 
-            UserResponse, 
+            LoginRequest,
+            RegisterRequest,
+            UserResponse,
             UpdateUserRequest,
             CreateGroup,
             GroupResponse,

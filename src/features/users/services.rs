@@ -3,11 +3,19 @@ use {
     crate::{
         database::Database,
         enums::errors::*,
-        features::groups::models::{Group, UserGroup},
-        schema::{groups, users},
+        features::groups::models::{
+            Group,
+            UserGroup,
+        },
+        schema::{
+            groups,
+            users,
+        },
     },
     diesel::{
-        prelude::*, QueryDsl, SelectableHelper
+        prelude::*,
+        QueryDsl,
+        SelectableHelper,
     },
     diesel_async::RunQueryDsl,
     std::sync::Arc,
@@ -29,7 +37,7 @@ pub async fn get_all_user_in_group(db: Arc<Database>, group_id: Uuid) -> Result<
         .select(User::as_select())
         .load(&mut conn)
         .await
-        .map_err(|e| Error::QueryFailed(e))?;
+        .map_err(Error::QueryFailed)?;
 
     Ok(users)
 }
