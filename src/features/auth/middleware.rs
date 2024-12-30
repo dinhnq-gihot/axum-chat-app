@@ -3,7 +3,10 @@ use {
     crate::{
         database::Database,
         enums::errors::*,
-        features::users::models::User,
+        features::users::{
+            dto::UserResponse,
+            models::User,
+        },
         schema::users,
         utils::jwt::decode_jwt,
         warn,
@@ -55,12 +58,13 @@ pub async fn check_jwt(
     })?;
     let mut conn = db.get_connection().await;
 
-    let user = users::table
+    let user: UserResponse = users::table
         .filter(users::email.eq(email))
         .filter(users::id.eq(user_id))
         .first::<User>(&mut conn)
         .await
-        .map_err(|_| Error::InvalidCredentials)?;
+        .map_err(|_| Error::InvalidCredentials)?
+        .into();
 
     drop(conn);
 

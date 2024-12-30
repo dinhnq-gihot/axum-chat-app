@@ -1,4 +1,5 @@
-#[allow(unused_imports)]
+#![allow(unused_imports)]
+
 use {
     super::{
         dto::{
@@ -67,7 +68,7 @@ use {
 #[only_role("admin")]
 pub async fn create_user(
     Extension(db): Extension<Arc<Database>>,
-    Extension(sender): Extension<User>,
+    Extension(sender): Extension<UserResponse>,
     Json(payload): Json<CreateUserRequest>,
 ) -> Result<impl IntoResponse> {
     let mut conn = db.get_connection().await;
@@ -136,7 +137,7 @@ pub async fn create_user(
 #[only_role("user", "admin")]
 pub async fn get_user_by_id(
     Extension(db): Extension<Arc<Database>>,
-    Extension(sender): Extension<User>,
+    Extension(sender): Extension<UserResponse>,
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse> {
     debug!("get_user_by_id: sender {:?}, id {id}", sender);
@@ -178,7 +179,7 @@ pub async fn get_user_by_id(
 #[only_role("admin")]
 pub async fn get_all_user(
     Extension(db): Extension<Arc<Database>>,
-    Extension(sender): Extension<User>,
+    Extension(sender): Extension<UserResponse>,
 ) -> Result<impl IntoResponse> {
     debug!("get_all_user: sender {sender:?}");
 
@@ -219,7 +220,7 @@ pub async fn get_all_user(
 #[only_role("user")]
 pub async fn update_user(
     Extension(db): Extension<Arc<Database>>,
-    Extension(sender): Extension<User>,
+    Extension(sender): Extension<UserResponse>,
     Json(payload): Json<UpdateUserRequest>,
 ) -> Result<impl IntoResponse> {
     debug!("update_user: sender {sender:?}, payload: {payload:?}");
@@ -284,7 +285,7 @@ pub async fn update_user(
 #[only_role("admin")]
 pub async fn delete_user(
     Extension(db): Extension<Arc<Database>>,
-    Extension(sender): Extension<User>,
+    Extension(sender): Extension<UserResponse>,
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse> {
     debug!("delete_user: sender {:?}, id {id}", sender);
@@ -323,7 +324,7 @@ pub async fn delete_user(
 #[only_role("user")]
 pub async fn update_avatar(
     Extension(db): Extension<Arc<Database>>,
-    Extension(sender): Extension<User>,
+    Extension(sender): Extension<UserResponse>,
     mut multipart: Multipart,
 ) -> Result<impl IntoResponse> {
     debug!("update_avatar: sender {sender:?}, multipart: {multipart:?}");

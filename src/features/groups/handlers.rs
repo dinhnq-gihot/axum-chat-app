@@ -1,4 +1,5 @@
-#[allow(unused_imports)]
+#![allow(unused_imports)]
+
 use {
     super::{
         dto::{
@@ -24,7 +25,10 @@ use {
                 GenericResponse,
             },
         },
-        features::users::models::User,
+        features::users::{
+            dto::UserResponse,
+            models::User,
+        },
         schema::{
             groups,
             users,
@@ -68,7 +72,7 @@ use {
 #[only_role("admin", "user")]
 pub async fn create_group(
     Extension(db): Extension<Arc<Database>>,
-    Extension(sender): Extension<User>,
+    Extension(sender): Extension<UserResponse>,
     Json(payload): Json<CreateGroup>,
 ) -> Result<impl IntoResponse> {
     debug!("create_group: sender {sender:?}, payload {payload:?}");
@@ -168,7 +172,7 @@ pub async fn create_group(
 #[only_role("user", "admin")]
 pub async fn get_group_by_id(
     Extension(db): Extension<Arc<Database>>,
-    Extension(sender): Extension<User>,
+    Extension(sender): Extension<UserResponse>,
     Path(id): Path<Uuid>,
 ) -> Result<impl IntoResponse> {
     debug!("get_group_by_id: sender: {sender:?}, id: {id}");
@@ -227,7 +231,7 @@ pub async fn get_group_by_id(
 #[only_role("user", "admin")]
 pub async fn get_all_groups_of_user(
     Extension(db): Extension<Arc<Database>>,
-    Extension(sender): Extension<User>,
+    Extension(sender): Extension<UserResponse>,
     Path(user_id): Path<Uuid>,
 ) -> Result<impl IntoResponse> {
     debug!("get_all_groups_of_user: sender {sender:?}, user_id {user_id}");

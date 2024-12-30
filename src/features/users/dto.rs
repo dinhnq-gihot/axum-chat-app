@@ -24,7 +24,7 @@ pub struct UpdateUserRequest {
     pub avatar: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
 pub struct UserResponse {
     pub id: Uuid,
     pub name: String,
