@@ -9,6 +9,8 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  
+
   test:
     name: Unit, doc and integration tests
     runs-on: self-hosted

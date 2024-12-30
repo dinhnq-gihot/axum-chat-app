@@ -1,0 +1,10 @@
+name: "Install dependencies"
+description: "Install all required dependecies to build and run crates"
+runs:
+  using: "composite"
+  steps:
+    - id: install-apt
+      shell: bash
+      run: |
+        sudo apt update -y
+        sudo apt install -y build-essential
