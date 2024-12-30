@@ -23,3 +23,24 @@ services:
       - PGADMIN_DEFAULT_PASSWORD=admin
     ports:
       - 5050:80
+
+  server:
+    container_name: chat-app
+    image: axum-chat-app:v0.0.1
+    depends_on:
+      db:
+        condition: service_started
+    restart: on-failure
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://chatapp:123@db/chatapp
+      - HOST=0.0.0.0
+      - PORT=3000
+      - JWT_SECRET=my_secret
+    volumes:
+      - ./:/opt/app
+    command:
+      - "/bin/sh"
+      - "-c"
+      - "/opt/app/start.sh"
