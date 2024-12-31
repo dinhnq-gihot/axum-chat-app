@@ -12,6 +12,9 @@ jobs:
   ci:
     name: CI
     uses: ./.github/workflows/ci.yml
+    secrets:
+      REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+      REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
 
   deploy:
     name: Build and Deploy

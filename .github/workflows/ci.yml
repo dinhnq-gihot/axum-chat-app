@@ -1,9 +1,6 @@
 name: CI
 
 on:
-  push:
-    tags:
-      - 'axum-chat-app-v*'
   workflow_call:
 
 env:
