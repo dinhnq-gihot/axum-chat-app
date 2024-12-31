@@ -105,10 +105,11 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Print repository name
+        run: echo "Repository Name: ${{ GITHUB_REPOSITORY }}"
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -117,6 +118,9 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_TOKEN  }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -124,6 +128,6 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: latest
-          labels: ${{ env.REGISTRY }}/${{ secrets.REGISTRY_USERNAME }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.REGISTRY_USERNAME }}/axum-chat-app:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.REGISTRY_USERNAME }}/axum-chat-app:buildcache,mode=max 
+          labels: ${{ env.REGISTRY }}/${{ GITHUB_REPOSITORY }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ GITHUB_REPOSITORY }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ GITHUB_REPOSITORY }}:buildcache,mode=max 
