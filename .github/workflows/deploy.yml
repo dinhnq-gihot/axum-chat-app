@@ -3,7 +3,7 @@ name: Deploy
 on:
   push:
     tags:
-      - 'axum-chat-app-v*'
+      - 'v*'
 
 env:
   REGISTRY: ghcr.io

@@ -2,7 +2,12 @@ name: CI
 
 on:
   workflow_call:
-
+    secrets:
+      REGISTRY_USERNAME:
+        required: true
+      REGISTRY_TOKEN:
+        required: true
+        
 env:
   REGISTRY: ghcr.io
 
