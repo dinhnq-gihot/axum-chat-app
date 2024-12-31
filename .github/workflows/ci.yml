@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'axum-chat-app-v*'
+  workflow_call:
 
 env:
   REGISTRY: ghcr.io
@@ -126,7 +127,7 @@ jobs:
         with:
           context: .
           file: ./docker/Dockerfile
-          push: false
+          push: true
           tags: ${{ env.REGISTRY }}/${{ github.repository }}:latest
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}:buildcache,mode=max 

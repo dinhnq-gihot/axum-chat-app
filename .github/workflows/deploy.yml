@@ -40,6 +40,9 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_TOKEN  }}
 
+      - name: print version
+        run: echo "version:${{ steps.version.outputs.VERSION }}"
+
       - name: Deploy to server
         run: |
           # Pull the new image
