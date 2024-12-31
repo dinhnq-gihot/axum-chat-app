@@ -106,7 +106,7 @@ jobs:
 
     steps:
       - name: Print repository name
-        run: echo "RepositoryName:${{ GITHUB_REPOSITORY }}"
+        run: echo "RepositoryName:${{ github.repository }}"
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -128,6 +128,6 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: latest
-          labels: ${{ env.REGISTRY }}/${{ GITHUB_REPOSITORY }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ GITHUB_REPOSITORY }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ GITHUB_REPOSITORY }}:buildcache,mode=max 
+          labels: ${{ env.REGISTRY }}/${{ github.repository }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}:buildcache,mode=max 

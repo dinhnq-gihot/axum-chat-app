@@ -43,7 +43,7 @@ jobs:
       - name: Deploy to server
         run: |
           # Pull the new image
-          docker pull ${{ env.REGISTRY }}/${{ GITHUB_REPOSITORY }}:${{ steps.version.outputs.VERSION }}
+          docker pull ${{ env.REGISTRY }}/${{ github.repository }}:${{ steps.version.outputs.VERSION }}
           
           # Stop and remove the old container if it exists
           docker stop chat-app || true
