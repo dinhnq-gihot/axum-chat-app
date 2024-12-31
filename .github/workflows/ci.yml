@@ -126,7 +126,7 @@ jobs:
         with:
           context: .
           file: ./docker/Dockerfile
-          push: true
+          push: false
           tags: latest
           labels: ${{ env.REGISTRY }}/${{ github.repository }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ github.repository }}:buildcache
