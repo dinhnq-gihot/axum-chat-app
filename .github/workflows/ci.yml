@@ -106,7 +106,7 @@ jobs:
 
     steps:
       - name: Print repository name
-        run: echo "Repository Name: ${{ GITHUB_REPOSITORY }}"
+        run: echo "RepositoryName:${{ GITHUB_REPOSITORY }}"
 
       - name: Checkout repository
         uses: actions/checkout@v4
