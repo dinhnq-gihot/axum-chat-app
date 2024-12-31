@@ -114,8 +114,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.GITHUB_USERNAME }}
-          password: ${{ secrets.GITHUB_TOKEN  }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_TOKEN  }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -124,6 +124,6 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: latest
-          labels: ${{ env.REGISTRY }}/${{ secrets.GITHUB_USERNAME }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.GITHUB_USERNAME }}/axum-chat-app:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.GITHUB_USERNAME }}/axum-chat-app:buildcache,mode=max 
+          labels: ${{ env.REGISTRY }}/${{ secrets.REGISTRY_USERNAME }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.REGISTRY_USERNAME }}/axum-chat-app:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ secrets.REGISTRY_USERNAME }}/axum-chat-app:buildcache,mode=max 
