@@ -26,12 +26,6 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: pwd
-        run: pwd
-
-      - name: ls
-        run: ls -la
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -61,6 +55,7 @@ jobs:
           fi
           
           # Start the new container
+          cd ./docker
           docker compose up -d
           
           # Clean up old images
