@@ -29,6 +29,9 @@ jobs:
       - name: pwd
         run: pwd
 
+      - name: ls
+        run: ls -la
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
