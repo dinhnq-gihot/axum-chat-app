@@ -44,9 +44,12 @@ jobs:
           # Pull the new image
           docker pull ${{ env.REGISTRY }}/${{ github.repository }}:latest
 
-            # Stop and remove any container using port 3000
+          # Remove all containers in docker compose
+          cd ./docker
+          docker compose down
+
+          # Stop and remove any container using port 3000
           CONTAINER_IDS=$(docker ps -q --filter "publish=3000" --filter "publish=5432")
-          
           if [ -n "$CONTAINER_IDS" ]; then
             for CONTAINER_ID in $CONTAINER_IDS; do
               docker stop $CONTAINER_ID
@@ -55,7 +58,6 @@ jobs:
           fi
           
           # Start the new container
-          cd ./docker
           docker compose up -d
           
           # Clean up old images
