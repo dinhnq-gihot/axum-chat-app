@@ -4,7 +4,7 @@ services:
   db:
     container_name: chatapp-db
     image: postgres:latest
-    restart: unless-stopped
+    restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -16,10 +16,10 @@ services:
 
   server:
     container_name: chat-app
-    image: axum-chat-app:${VERSION:-latest}
+    image: ghcr.io/dinhnq-gihot/axum-chat-app:${VERSION:-latest}
     depends_on:
       - db
-    restart: unless-stopped
+    restart: always
     ports:
       - "3000:3000"
     environment:
@@ -37,9 +37,9 @@ services:
   nginx:
     container_name: chatapp-nginx
     image: nginx:latest
-    restart: unless-stopped
+    restart: always
     ports:
-      - "8080:80"
+      - "80:80"
     volumes:
       - ./conf/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
