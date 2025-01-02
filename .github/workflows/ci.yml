@@ -101,9 +101,9 @@ jobs:
       - clippy
     if: |
       always() &&
-      (needs.test.result == 'success' || needs.test.result == 'cancelled') &&
-      (needs.clippy.result == 'success' || needs.clippy.result == 'cancelled') &&
-      (needs.fmt.result == 'success' || needs.fmt.result == 'cancelled')
+      (needs.test.result == 'success') &&
+      (needs.clippy.result == 'success') &&
+      (needs.fmt.result == 'success')
     runs-on: self-hosted
     timeout-minutes: 60
 

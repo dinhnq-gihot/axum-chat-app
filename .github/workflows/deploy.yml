@@ -46,10 +46,13 @@ jobs:
 
             # Stop and remove any container using port 3000
           CONTAINER_IDS=$(docker ps -q --filter "publish=3000" --filter "publish=5432")
-          for CONTAINER_ID in "${CONTAINER_IDS[@]}"; do
-            docker stop $CONTAINER_ID
-            docker rm $CONTAINER_ID
-          done
+          
+          if [ -n "$CONTAINER_IDS" ]; then
+            for CONTAINER_ID in $CONTAINER_IDS; do
+              docker stop $CONTAINER_ID
+              docker rm $CONTAINER_ID
+            done
+          fi
           
           # Start the new container
           docker compose up -d
