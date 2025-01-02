@@ -68,7 +68,7 @@ jobs:
           # Wait for container to start
           sleep 10
           # Check if container is running
-          if ! docker ps | grep -q chat-app; then
+          if ! docker ps | grep axum-chat-app; then
             echo "Container is not running"
             exit 1
           fi
